@@ -50,9 +50,12 @@ Spring Kafka). `web` is the only module that wires everything together
 **Event flow:** every join (including the creator's) publishes a
 `ParticipantJoinedEvent` to Kafka; every finalization publishes a
 `GroupBookingFinalizedEvent`. A `GroupBookingFinalizationScheduler` periodically finds
-`OPEN` bookings past their deadline and finalizes them. A `NotificationKafkaListener`
-consumes both topics and logs them - see
-[Simplifications](#simplifications-and-next-steps) for why that isn't its own service.
+`OPEN` bookings past their deadline and finalizes them. Two independent consumer groups
+read both topics: a `NotificationKafkaListener` that logs them - see
+[Simplifications](#simplifications-and-next-steps) for why that isn't its own service -
+and a `GroupBookingKafkaBridge` that fans a "this booking changed" ping out over SSE
+(`GroupBookingEventBroadcaster`) to every browser tab watching that booking, so
+`GroupBookingDetail` updates live instead of waiting for its next poll.
 
 ## Business rules
 
@@ -99,6 +102,7 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | POST   | `/api/trips/{tripId}/group-bookings`      | Start a group booking (`{"customerName"}`) |
 | POST   | `/api/group-bookings/{bookingId}/participants` | Join a group booking (`{"customerName"}`) |
 | GET    | `/api/group-bookings/{bookingId}`         | Get a group booking's current state   |
+| GET    | `/api/group-bookings/{bookingId}/events`  | SSE stream: a ping each time the booking changes |
 
 Errors: `404` for an unknown trip/booking, `409` for a domain rule violation (group
 full, deadline passed, already finalized), `400` for validation failures.
@@ -147,7 +151,7 @@ into by this work - branches are merged in by hand, in order:
 
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
-`ci-pipelines`
+`ci-pipelines` → `live-price-updates`
 
 ## Simplifications and next steps
 
@@ -157,9 +161,14 @@ Documented deliberately, not accidentally missed:
   real system this would be its own service, consuming the same topics to actually
   notify customers. Kept in-process here to demonstrate the event flow without standing
   up a second deployable for an MVP pass.
-- **The frontend polls, it doesn't get pushed to.** `GroupBookingDetail` re-fetches
-  every 4 seconds. A Kafka → WebSocket/SSE bridge so the UI updates instantly would be
-  the natural next step (and was part of the original brainstorm).
+- **Live updates hold their state in memory, in the one deployable.**
+  `GroupBookingEventBroadcaster` keeps its SSE subscribers in a plain in-memory map on
+  the `web` instance that received the connection. That's fine for one instance; running
+  several behind a load balancer would need either sticky sessions or moving the fan-out
+  itself onto Kafka (e.g. each instance's bridge re-publishing to a per-connection
+  topic, or a shared pub/sub layer) so a subscriber connected to instance A still hears
+  about an event consumed by instance B. `GroupBookingDetail` also keeps a 20s fallback
+  poll as a backstop in case an SSE connection drops.
 - **Trips are seed data, not admin-managed.** `TripCatalogSeeder` inserts a handful of
   sample trips on first startup; there's no create/edit flow for the catalog itself.
 - **No auth.** Anyone can create or join a group with any name they type in.

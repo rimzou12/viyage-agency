@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { API_BASE_URL } from './api-config';
 import { GroupBooking } from './models';
 
+const LIVE_EVENT_NAMES = ['participant-joined', 'finalized'];
+
 @Injectable({ providedIn: 'root' })
 export class GroupBookingService {
   private readonly http = inject(HttpClient);
@@ -22,6 +24,22 @@ export class GroupBookingService {
 
   getGroupBooking(bookingId: string): Observable<GroupBooking> {
     return this.http.get<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}`);
+  }
+
+  /**
+   * Emits (with no payload) whenever the backend pushes a live update for this booking
+   * over SSE - a signal to re-fetch, not a copy of the booking itself. Never errors or
+   * completes on its own; closes the underlying EventSource on unsubscribe.
+   */
+  streamEvents(bookingId: string): Observable<void> {
+    return new Observable<void>((subscriber) => {
+      const source = new EventSource(`${API_BASE_URL}/api/group-bookings/${bookingId}/events`);
+      const onEvent = () => subscriber.next();
+      for (const eventName of LIVE_EVENT_NAMES) {
+        source.addEventListener(eventName, onEvent);
+      }
+      return () => source.close();
+    });
   }
 }
 
