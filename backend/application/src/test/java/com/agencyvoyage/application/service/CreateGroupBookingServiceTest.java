@@ -17,6 +17,8 @@ import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.User;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -58,7 +60,7 @@ class CreateGroupBookingServiceTest {
         Trip trip = trip();
         when(tripRepository.findById(trip.id())).thenReturn(Optional.of(trip));
 
-        GroupBooking booking = service.createGroupBooking(new CreateGroupBookingCommand(trip.id(), "Alice"));
+        GroupBooking booking = service.createGroupBooking(new CreateGroupBookingCommand(trip.id(), alice()));
 
         assertThat(booking.currentParticipantCount()).isEqualTo(1);
         assertThat(booking.participants().get(0).customerName()).isEqualTo("Alice");
@@ -72,8 +74,12 @@ class CreateGroupBookingServiceTest {
         TripId unknownId = TripId.newId();
         when(tripRepository.findById(unknownId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.createGroupBooking(new CreateGroupBookingCommand(unknownId, "Alice")))
+        assertThatThrownBy(() -> service.createGroupBooking(new CreateGroupBookingCommand(unknownId, alice())))
                 .isInstanceOf(TripNotFoundException.class);
+    }
+
+    private static User alice() {
+        return new User(UserId.newId(), "alice@example.com", "Alice");
     }
 
     private static Trip trip() {

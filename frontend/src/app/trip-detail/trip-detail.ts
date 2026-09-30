@@ -4,6 +4,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TripService } from '../core/trip.service';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
+import { AuthService } from '../core/auth.service';
 import { Trip } from '../core/models';
 
 @Component({
@@ -19,6 +20,7 @@ export class TripDetail {
   private readonly router = inject(Router);
   private readonly tripService = inject(TripService);
   private readonly groupBookingService = inject(GroupBookingService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly trip = signal<Trip | null>(null);
   protected readonly loading = signal(true);
@@ -40,20 +42,15 @@ export class TripDetail {
     });
   }
 
-  protected startGroup(customerName: string): void {
+  protected startGroup(): void {
     const trip = this.trip();
-    if (!trip || !customerName.trim()) {
+    if (!trip) {
       return;
     }
     this.creating.set(true);
     this.createError.set(null);
-    this.groupBookingService.createGroupBooking(trip.id, customerName.trim()).subscribe({
-      next: (booking) => {
-        if (booking.myParticipantId) {
-          this.groupBookingService.rememberMyParticipantId(booking.id, booking.myParticipantId);
-        }
-        this.router.navigate(['/group-bookings', booking.id]);
-      },
+    this.groupBookingService.createGroupBooking(trip.id).subscribe({
+      next: (booking) => this.router.navigate(['/group-bookings', booking.id]),
       error: (err: HttpErrorResponse) => {
         this.creating.set(false);
         this.createError.set(apiErrorMessage(err, 'Could not start a group booking.'));

@@ -8,6 +8,7 @@ import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import com.agencyvoyage.infrastructure.persistence.jpa.entity.GroupBookingJpaEntity;
 import com.agencyvoyage.infrastructure.persistence.jpa.entity.ParticipantJpaEntity;
 import com.agencyvoyage.infrastructure.persistence.jpa.entity.PriceTierEmbeddable;
@@ -27,7 +28,7 @@ public final class GroupBookingMapper {
                 .map(tier -> new PriceTierEmbeddable(tier.minParticipants(), tier.pricePerSeat()))
                 .toList();
         List<ParticipantJpaEntity> participants = booking.participants().stream()
-                .map(p -> new ParticipantJpaEntity(p.id().value(), p.customerName(), p.joinedAt()))
+                .map(p -> new ParticipantJpaEntity(p.id().value(), p.userId().value(), p.customerName(), p.joinedAt()))
                 .toList();
         return new GroupBookingJpaEntity(
                 booking.id().value(),
@@ -65,7 +66,10 @@ public final class GroupBookingMapper {
         for (Participant participant : booking.participants()) {
             if (!alreadyPersisted.contains(participant.id().value())) {
                 entity.addParticipant(new ParticipantJpaEntity(
-                        participant.id().value(), participant.customerName(), participant.joinedAt()));
+                        participant.id().value(),
+                        participant.userId().value(),
+                        participant.customerName(),
+                        participant.joinedAt()));
             }
         }
     }
@@ -76,7 +80,8 @@ public final class GroupBookingMapper {
                 .toList();
         PricingSchedule schedule = PricingSchedule.of(entity.getBasePrice(), tiers, entity.getMaxParticipants());
         List<Participant> participants = entity.getParticipants().stream()
-                .map(p -> new Participant(new ParticipantId(p.getId()), p.getCustomerName(), p.getJoinedAt()))
+                .map(p -> new Participant(
+                        new ParticipantId(p.getId()), new UserId(p.getUserId()), p.getCustomerName(), p.getJoinedAt()))
                 .toList();
         return GroupBooking.reconstitute(
                 new GroupBookingId(entity.getId()),

@@ -1,1 +1,14 @@
+<header class="nav">
+  <a class="brand" routerLink="/">Agency Voyage</a>
+  <div class="account">
+    @if (auth.isLoggedIn()) {
+      <span class="hello">Hi, {{ auth.currentUser()?.displayName }}</span>
+      <button type="button" (click)="logout()">Log out</button>
+    } @else {
+      <a routerLink="/login">Log in</a>
+      <a routerLink="/register" class="register">Register</a>
+    }
+  </div>
+</header>
+
 <router-outlet />

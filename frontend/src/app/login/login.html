@@ -1,0 +1,23 @@
+<main class="page">
+  <h1>Log in</h1>
+
+  <form (submit)="$event.preventDefault(); submit(emailInput.value, passwordInput.value)">
+    <label>
+      Email
+      <input #emailInput type="email" required [disabled]="submitting()" />
+    </label>
+    <label>
+      Password
+      <input #passwordInput type="password" required [disabled]="submitting()" />
+    </label>
+    <button type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Logging in...' : 'Log in' }}
+    </button>
+  </form>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <p class="switch">No account yet? <a routerLink="/register">Register</a></p>
+</main>

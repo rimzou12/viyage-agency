@@ -7,6 +7,8 @@ import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
 import com.agencyvoyage.application.port.out.event.ParticipantLeftEvent;
 import com.agencyvoyage.domain.booking.GroupBooking;
+import com.agencyvoyage.domain.booking.Participant;
+import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
@@ -31,14 +33,19 @@ public final class LeaveGroupBookingService implements LeaveGroupBookingUseCase 
                 .orElseThrow(() -> new GroupBookingNotFoundException(command.bookingId()));
 
         Instant now = clock.instant();
-        booking.leave(command.participantId(), now);
+        Participant departing = booking.participants().stream()
+                .filter(p -> p.userId().equals(command.userId()))
+                .findFirst()
+                .orElseThrow(() -> new ParticipantNotInBookingException(booking.id(), command.userId()));
+
+        booking.leave(command.userId(), now);
 
         groupBookingRepository.save(booking);
 
         eventPublisher.publishParticipantLeft(new ParticipantLeftEvent(
                 booking.id(),
                 booking.tripId(),
-                command.participantId(),
+                departing.id(),
                 booking.currentParticipantCount(),
                 booking.currentPricePerSeat(),
                 now));

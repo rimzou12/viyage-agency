@@ -1,0 +1,45 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid #e2e5ea;
+  background: #fff;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  .brand {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1a1a1a;
+    text-decoration: none;
+  }
+
+  .account {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.9rem;
+
+    a {
+      color: #1a6b3c;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .hello {
+      color: #5b6472;
+    }
+
+    button {
+      padding: 0.35rem 0.8rem;
+      border: 1px solid #cfd4db;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+  }
+}

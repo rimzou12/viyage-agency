@@ -20,6 +20,8 @@ import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.User;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -58,7 +60,7 @@ class JoinGroupBookingServiceTest {
         GroupBooking booking = openBooking(2, 5);
         when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
 
-        GroupBooking result = service.joinGroupBooking(new JoinGroupBookingCommand(booking.id(), "Bob"));
+        GroupBooking result = service.joinGroupBooking(new JoinGroupBookingCommand(booking.id(), bob()));
 
         assertThat(result.currentParticipantCount()).isEqualTo(2);
         assertThat(result.currentPricePerSeat()).isEqualByComparingTo("800");
@@ -71,7 +73,7 @@ class JoinGroupBookingServiceTest {
         GroupBookingId unknownId = GroupBookingId.newId();
         when(groupBookingRepository.findById(unknownId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.joinGroupBooking(new JoinGroupBookingCommand(unknownId, "Bob")))
+        assertThatThrownBy(() -> service.joinGroupBooking(new JoinGroupBookingCommand(unknownId, bob())))
                 .isInstanceOf(GroupBookingNotFoundException.class);
     }
 
@@ -80,8 +82,12 @@ class JoinGroupBookingServiceTest {
         GroupBooking booking = openBooking(1, 1);
         when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
 
-        assertThatThrownBy(() -> service.joinGroupBooking(new JoinGroupBookingCommand(booking.id(), "Bob")))
+        assertThatThrownBy(() -> service.joinGroupBooking(new JoinGroupBookingCommand(booking.id(), bob())))
                 .isInstanceOf(GroupFullException.class);
+    }
+
+    private static User bob() {
+        return new User(UserId.newId(), "bob@example.com", "Bob");
     }
 
     private static GroupBooking openBooking(int minParticipants, int maxParticipants) {
@@ -99,7 +105,7 @@ class JoinGroupBookingServiceTest {
                 maxParticipants,
                 NOW.plus(1, ChronoUnit.DAYS),
                 schedule);
-        Participant creator = new Participant(ParticipantId.newId(), "Alice", NOW);
+        Participant creator = new Participant(ParticipantId.newId(), UserId.newId(), "Alice", NOW);
         return GroupBooking.open(GroupBookingId.newId(), trip, creator, NOW);
     }
 }

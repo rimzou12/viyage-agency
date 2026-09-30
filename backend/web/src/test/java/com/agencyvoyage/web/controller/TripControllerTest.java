@@ -9,6 +9,7 @@ import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.infrastructure.security.JwtTokenParser;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -31,6 +32,14 @@ class TripControllerTest {
 
     @MockitoBean
     private GetTripUseCase getTripUseCase;
+
+    /**
+     * Not used by TripController, but JwtAuthenticationFilter is a servlet Filter, so
+     * @WebMvcTest's scanning constructs it regardless of which controller is under
+     * test - it needs this dependency satisfied to build the context at all.
+     */
+    @MockitoBean
+    private JwtTokenParser jwtTokenParser;
 
     @Test
     void listsTripsAsJson() {

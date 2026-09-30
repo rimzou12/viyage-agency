@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { interval, merge, startWith, switchMap } from 'rxjs';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
+import { AuthService } from '../core/auth.service';
 import { GroupBooking } from '../core/models';
 
 /** Backstop only - live updates normally arrive over SSE well before this fires. */
@@ -23,6 +24,7 @@ export class GroupBookingDetail {
   private readonly groupBookingService = inject(GroupBookingService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly bookingId = this.route.snapshot.paramMap.get('id')!;
+  protected readonly auth = inject(AuthService);
 
   protected readonly booking = signal<GroupBooking | null>(null);
   protected readonly loading = signal(true);
@@ -31,9 +33,9 @@ export class GroupBookingDetail {
   protected readonly joinError = signal<string | null>(null);
   protected readonly leaving = signal(false);
   protected readonly leaveError = signal<string | null>(null);
-  protected readonly myParticipantId = signal<string | null>(
-    this.groupBookingService.myParticipantId(this.bookingId),
-  );
+
+  /** The server computes this from the auth token on every response, including GET. */
+  protected readonly myParticipantId = computed(() => this.booking()?.myParticipantId ?? null);
 
   constructor() {
     // Live updates arrive over SSE (near-instant); the periodic timer is just a
@@ -58,20 +60,13 @@ export class GroupBookingDetail {
       });
   }
 
-  protected join(customerName: string): void {
-    if (!customerName.trim()) {
-      return;
-    }
+  protected join(): void {
     this.joining.set(true);
     this.joinError.set(null);
-    this.groupBookingService.joinGroupBooking(this.bookingId, customerName.trim()).subscribe({
+    this.groupBookingService.joinGroupBooking(this.bookingId).subscribe({
       next: (booking) => {
         this.booking.set(booking);
         this.joining.set(false);
-        if (booking.myParticipantId) {
-          this.groupBookingService.rememberMyParticipantId(this.bookingId, booking.myParticipantId);
-          this.myParticipantId.set(booking.myParticipantId);
-        }
       },
       error: (err: HttpErrorResponse) => {
         this.joining.set(false);
@@ -81,18 +76,12 @@ export class GroupBookingDetail {
   }
 
   protected leave(): void {
-    const participantId = this.myParticipantId();
-    if (!participantId) {
-      return;
-    }
     this.leaving.set(true);
     this.leaveError.set(null);
-    this.groupBookingService.leaveGroupBooking(this.bookingId, participantId).subscribe({
+    this.groupBookingService.leaveGroupBooking(this.bookingId).subscribe({
       next: (booking) => {
         this.booking.set(booking);
         this.leaving.set(false);
-        this.groupBookingService.forgetMyParticipantId(this.bookingId);
-        this.myParticipantId.set(null);
       },
       error: (err: HttpErrorResponse) => {
         this.leaving.set(false);

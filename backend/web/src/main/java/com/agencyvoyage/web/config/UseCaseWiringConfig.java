@@ -7,14 +7,21 @@ import com.agencyvoyage.application.port.in.GetTripUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
+import com.agencyvoyage.application.port.in.LoginUseCase;
+import com.agencyvoyage.application.port.in.RegisterUserUseCase;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
+import com.agencyvoyage.application.port.out.PasswordHasher;
+import com.agencyvoyage.application.port.out.TokenIssuer;
 import com.agencyvoyage.application.port.out.TripRepository;
+import com.agencyvoyage.application.port.out.UserRepository;
 import com.agencyvoyage.application.service.CreateGroupBookingService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
 import com.agencyvoyage.application.service.GetGroupBookingService;
 import com.agencyvoyage.application.service.JoinGroupBookingService;
 import com.agencyvoyage.application.service.LeaveGroupBookingService;
+import com.agencyvoyage.application.service.LoginService;
+import com.agencyvoyage.application.service.RegisterUserService;
 import com.agencyvoyage.application.service.TripQueryService;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
@@ -79,5 +86,17 @@ public class UseCaseWiringConfig {
     public FinalizeGroupBookingUseCase finalizeGroupBookingUseCase(
             GroupBookingRepository groupBookingRepository, GroupBookingEventPublisher eventPublisher, Clock clock) {
         return new FinalizeGroupBookingService(groupBookingRepository, eventPublisher, clock);
+    }
+
+    @Bean
+    public RegisterUserUseCase registerUserUseCase(
+            UserRepository userRepository, PasswordHasher passwordHasher, TokenIssuer tokenIssuer) {
+        return new RegisterUserService(userRepository, passwordHasher, tokenIssuer);
+    }
+
+    @Bean
+    public LoginUseCase loginUseCase(
+            UserRepository userRepository, PasswordHasher passwordHasher, TokenIssuer tokenIssuer) {
+        return new LoginService(userRepository, passwordHasher, tokenIssuer);
     }
 }

@@ -13,6 +13,7 @@ import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -63,7 +64,7 @@ class GetGroupBookingServiceTest {
                 5,
                 NOW.plus(1, ChronoUnit.DAYS),
                 schedule);
-        Participant creator = new Participant(ParticipantId.newId(), "Alice", NOW);
+        Participant creator = new Participant(ParticipantId.newId(), UserId.newId(), "Alice", NOW);
         return GroupBooking.open(GroupBookingId.newId(), trip, creator, NOW);
     }
 }

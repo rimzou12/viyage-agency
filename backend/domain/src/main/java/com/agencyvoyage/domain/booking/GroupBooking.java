@@ -1,6 +1,7 @@
 package com.agencyvoyage.domain.booking;
 
 import com.agencyvoyage.domain.exception.AlreadyFinalizedException;
+import com.agencyvoyage.domain.exception.AlreadyJoinedException;
 import com.agencyvoyage.domain.exception.BookingClosedException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
@@ -9,6 +10,7 @@ import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -101,12 +103,15 @@ public final class GroupBooking {
         if (participants.size() >= maxParticipants) {
             throw new GroupFullException(id, maxParticipants);
         }
+        if (participants.stream().anyMatch(p -> p.userId().equals(participant.userId()))) {
+            throw new AlreadyJoinedException(id, participant.userId());
+        }
         participants.add(participant);
     }
 
-    /** Removes a participant, freeing their seat and re-pricing the group for everyone left. */
-    public void leave(ParticipantId participantId, Instant now) {
-        Objects.requireNonNull(participantId, "participantId must not be null");
+    /** Removes the given user's participation, freeing their seat and re-pricing the group for everyone left. */
+    public void leave(UserId userId, Instant now) {
+        Objects.requireNonNull(userId, "userId must not be null");
         Objects.requireNonNull(now, "now must not be null");
 
         if (status != GroupBookingStatus.OPEN) {
@@ -115,9 +120,9 @@ public final class GroupBooking {
         if (!now.isBefore(deadline)) {
             throw new DeadlineExpiredException(deadline, now);
         }
-        boolean removed = participants.removeIf(p -> p.id().equals(participantId));
+        boolean removed = participants.removeIf(p -> p.userId().equals(userId));
         if (!removed) {
-            throw new ParticipantNotInBookingException(id, participantId);
+            throw new ParticipantNotInBookingException(id, userId);
         }
     }
 

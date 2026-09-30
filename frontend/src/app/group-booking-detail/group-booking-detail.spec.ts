@@ -25,6 +25,12 @@ describe('GroupBookingDetail', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
+    // AuthService reads its initial state from localStorage on construction.
+    localStorage.setItem(
+      'agency-voyage:auth',
+      JSON.stringify({ token: 'fake-token', user: { id: 'u1', email: 'alice@example.com', displayName: 'Alice' } }),
+    );
+
     await TestBed.configureTestingModule({
       imports: [GroupBookingDetail],
       providers: [
@@ -40,6 +46,8 @@ describe('GroupBookingDetail', () => {
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
   });
+
+  afterEach(() => localStorage.removeItem('agency-voyage:auth'));
 
   it('shows the current price, participants and a hint about the next tier', () => {
     const fixture = TestBed.createComponent(GroupBookingDetail);
@@ -60,13 +68,10 @@ describe('GroupBookingDetail', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const input = compiled.querySelector('.join input') as HTMLInputElement;
-    input.value = 'Bob';
-    input.dispatchEvent(new Event('input'));
-    (compiled.querySelector('.join form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    (compiled.querySelector('.join button') as HTMLButtonElement).click();
 
     const joinReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants`);
-    expect(joinReq.request.body).toEqual({ customerName: 'Bob' });
+    expect(joinReq.request.method).toBe('POST');
     joinReq.flush({ ...sampleBooking(), participantCount: 3 });
     fixture.detectChanges();
 
@@ -80,10 +85,7 @@ describe('GroupBookingDetail', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const input = compiled.querySelector('.join input') as HTMLInputElement;
-    input.value = 'Carol';
-    input.dispatchEvent(new Event('input'));
-    (compiled.querySelector('.join form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    (compiled.querySelector('.join button') as HTMLButtonElement).click();
     const joinReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants`);
     joinReq.flush({ ...sampleBooking(), participantCount: 3, myParticipantId: 'p3' });
     fixture.detectChanges();
@@ -92,7 +94,7 @@ describe('GroupBookingDetail', () => {
     expect(leaveButton).toBeTruthy();
     leaveButton.click();
 
-    const leaveReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants/p3`);
+    const leaveReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants/me`);
     expect(leaveReq.request.method).toBe('DELETE');
     leaveReq.flush({ ...sampleBooking(), participantCount: 2, myParticipantId: null });
     fixture.detectChanges();
