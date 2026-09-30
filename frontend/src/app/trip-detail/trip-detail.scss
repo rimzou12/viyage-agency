@@ -66,3 +66,48 @@ h1 {
     color: #5b6472;
   }
 }
+
+.start-group {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e5ea;
+
+  h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+  }
+
+  p {
+    margin: 0 0 0.9rem;
+    color: #5b6472;
+    font-size: 0.9rem;
+  }
+
+  form {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  input {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #cfd4db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+
+  button {
+    padding: 0.55rem 1.1rem;
+    border: none;
+    border-radius: 8px;
+    background: #1a6b3c;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+}

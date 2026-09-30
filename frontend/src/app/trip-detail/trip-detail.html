@@ -42,5 +42,19 @@
         {{ t.bookingDeadline | date: 'medium' }}.
       </p>
     </section>
+
+    <section class="start-group">
+      <h2>Start a group</h2>
+      <p>Be the first to join - others can then hop in and the price drops for everyone.</p>
+      <form (submit)="$event.preventDefault(); startGroup(nameInput.value)">
+        <input #nameInput type="text" placeholder="Your name" required [disabled]="creating()" />
+        <button type="submit" [disabled]="creating()">
+          {{ creating() ? 'Starting...' : 'Start this group' }}
+        </button>
+      </form>
+      @if (createError()) {
+        <p class="error">{{ createError() }}</p>
+      }
+    </section>
   }
 </main>

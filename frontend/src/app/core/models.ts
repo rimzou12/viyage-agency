@@ -33,5 +33,6 @@ export interface GroupBooking {
   maxParticipants: number;
   currentPricePerSeat: number;
   deadline: string;
+  priceTiers: PriceTier[];
   participants: Participant[];
 }
