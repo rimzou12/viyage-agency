@@ -1,0 +1,156 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: #1a6b3c;
+  text-decoration: none;
+  font-size: 0.9rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+h1 {
+  display: inline-block;
+  margin: 0 0.6rem 0 0;
+}
+
+.status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+
+  &.open {
+    background: #e3f3e9;
+    color: #1a6b3c;
+  }
+
+  &.confirmed {
+    background: #e1ecfd;
+    color: #1a4fa0;
+  }
+
+  &.cancelled {
+    background: #fbe3e1;
+    color: #a3271e;
+  }
+}
+
+.error {
+  color: #b3261e;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    background: #f6f7f9;
+
+    .label {
+      font-size: 0.75rem;
+      color: #5b6472;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .value {
+      font-size: 1.15rem;
+      font-weight: 600;
+
+      &.price {
+        color: #1a6b3c;
+      }
+    }
+  }
+}
+
+.hint {
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+  color: #5b6472;
+}
+
+.full {
+  font-weight: 600;
+  color: #a3271e;
+}
+
+.join {
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+  }
+
+  form {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  input {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #cfd4db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+
+  button {
+    padding: 0.55rem 1.1rem;
+    border: none;
+    border-radius: 8px;
+    background: #1a6b3c;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+}
+
+.participants {
+  h2 {
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  li {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #f0f1f3;
+    font-size: 0.9rem;
+  }
+}

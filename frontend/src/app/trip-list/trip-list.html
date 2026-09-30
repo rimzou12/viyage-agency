@@ -1,0 +1,28 @@
+<main class="page">
+  <h1>Group trips</h1>
+  <p class="subtitle">Join a group booking and the price per seat drops as more people sign up.</p>
+
+  @if (loading()) {
+    <p>Loading trips...</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (trips().length === 0) {
+    <p>No trips available right now.</p>
+  } @else {
+    <div class="trip-grid">
+      @for (trip of trips(); track trip.id) {
+        <a class="trip-card" [routerLink]="['/trips', trip.id]">
+          <h2>{{ trip.destination }}</h2>
+          <p class="dates">{{ trip.departureDate | date }} &ndash; {{ trip.returnDate | date }}</p>
+          <p class="description">{{ trip.description }}</p>
+          <div class="price">
+            <span class="from">from</span>
+            <span class="amount">{{ startingPrice(trip) | currency }}</span>
+            <span class="per">per seat</span>
+          </div>
+          <p class="group-size">{{ trip.minParticipants }}&ndash;{{ trip.maxParticipants }} travelers</p>
+        </a>
+      }
+    </div>
+  }
+</main>
