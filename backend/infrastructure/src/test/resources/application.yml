@@ -1,19 +1,5 @@
 spring:
-  application:
-    name: agency-voyage
-
-  datasource:
-    url: jdbc:postgresql://localhost:5433/agencyvoyage
-    username: agencyvoyage
-    password: agencyvoyage
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    open-in-view: false
-
   kafka:
-    bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -24,10 +10,3 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.agencyvoyage.infrastructure.messaging.kafka.dto"
-
-server:
-  port: 8080
-
-agency-voyage:
-  group-booking:
-    finalization-check-interval-ms: 30000
