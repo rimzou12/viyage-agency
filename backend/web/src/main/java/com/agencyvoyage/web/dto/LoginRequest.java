@@ -2,5 +2,5 @@ package com.agencyvoyage.web.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record CreateGroupBookingRequest(@NotBlank String customerName) {
+public record LoginRequest(@NotBlank String email, @NotBlank String password) {
 }

@@ -16,6 +16,7 @@ import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -99,7 +100,8 @@ class FinalizeGroupBookingServiceTest {
                 maxParticipants,
                 DEADLINE,
                 schedule);
-        Participant creator = new Participant(ParticipantId.newId(), "Alice", DEADLINE.minusSeconds(60));
+        Participant creator =
+                new Participant(ParticipantId.newId(), UserId.newId(), "Alice", DEADLINE.minusSeconds(60));
         return GroupBooking.open(GroupBookingId.newId(), trip, creator, DEADLINE.minusSeconds(60));
     }
 }

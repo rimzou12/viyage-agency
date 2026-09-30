@@ -11,6 +11,7 @@ import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import com.agencyvoyage.infrastructure.config.AbstractPostgresIT;
 import com.agencyvoyage.infrastructure.persistence.jpa.adapter.GroupBookingRepositoryAdapter;
 import java.math.BigDecimal;
@@ -30,10 +31,8 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     @Test
     void savesAndReloadsANewlyOpenedBooking() {
         Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
-        GroupBooking booking = GroupBooking.open(
-                GroupBookingId.newId(), trip, new Participant(
-                        ParticipantId.newId(), "Alice", Instant.now()),
-                Instant.now());
+        GroupBooking booking =
+                GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", Instant.now()), Instant.now());
 
         adapter.save(booking);
 
@@ -48,12 +47,10 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     void persistsParticipantsAddedAfterTheInitialSave() {
         Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
         Instant now = Instant.now();
-        GroupBooking booking = GroupBooking.open(
-                GroupBookingId.newId(), trip,
-                new Participant(ParticipantId.newId(), "Alice", now), now);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
         adapter.save(booking);
 
-        booking.join(new Participant(ParticipantId.newId(), "Bob", now), now);
+        booking.join(participant("Bob", now), now);
         adapter.save(booking);
 
         GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
@@ -65,14 +62,12 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     void persistsAParticipantLeavingAfterTheInitialSave() {
         Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
         Instant now = Instant.now();
-        ParticipantId bobId = ParticipantId.newId();
-        GroupBooking booking = GroupBooking.open(
-                GroupBookingId.newId(), trip,
-                new Participant(ParticipantId.newId(), "Alice", now), now);
-        booking.join(new Participant(bobId, "Bob", now), now);
+        UserId bobUserId = UserId.newId();
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
+        booking.join(new Participant(ParticipantId.newId(), bobUserId, "Bob", now), now);
         adapter.save(booking);
 
-        booking.leave(bobId, now);
+        booking.leave(bobUserId, now);
         adapter.save(booking);
 
         GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
@@ -86,9 +81,7 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
         Instant deadline = Instant.now().plus(1, ChronoUnit.SECONDS);
         Trip trip = trip(deadline);
         Instant now = Instant.now();
-        GroupBooking booking = GroupBooking.open(
-                GroupBookingId.newId(), trip,
-                new Participant(ParticipantId.newId(), "Alice", now), now);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
         adapter.save(booking);
 
         List<GroupBooking> due = adapter.findOpenWithDeadlineAtOrBefore(deadline.plusSeconds(1));
@@ -100,13 +93,15 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     void findByTripIdReturnsOnlyThatTripsBookings() {
         Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
         Instant now = Instant.now();
-        GroupBooking booking = GroupBooking.open(
-                GroupBookingId.newId(), trip,
-                new Participant(ParticipantId.newId(), "Alice", now), now);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
         adapter.save(booking);
 
         assertThat(adapter.findByTripId(trip.id())).extracting(GroupBooking::id).containsExactly(booking.id());
         assertThat(adapter.findByTripId(TripId.newId())).isEmpty();
+    }
+
+    private static Participant participant(String name, Instant joinedAt) {
+        return new Participant(ParticipantId.newId(), UserId.newId(), name, joinedAt);
     }
 
     private static Trip trip(Instant deadline) {

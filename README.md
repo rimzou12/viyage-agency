@@ -95,18 +95,27 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 
 ## API
 
-| Method | Path                                     | Description                          |
-|--------|-------------------------------------------|---------------------------------------|
-| GET    | `/api/trips`                              | List the trip catalog                 |
-| GET    | `/api/trips/{tripId}`                     | Get one trip                          |
-| POST   | `/api/trips/{tripId}/group-bookings`      | Start a group booking (`{"customerName"}`) |
-| POST   | `/api/group-bookings/{bookingId}/participants` | Join a group booking (`{"customerName"}`) |
-| DELETE | `/api/group-bookings/{bookingId}/participants/{participantId}` | Leave a group booking |
-| GET    | `/api/group-bookings/{bookingId}`         | Get a group booking's current state   |
-| GET    | `/api/group-bookings/{bookingId}/events`  | SSE stream: a ping each time the booking changes |
+| Method | Path                                     | Auth | Description                          |
+|--------|-------------------------------------------|------|---------------------------------------|
+| POST   | `/api/auth/register`                      | -    | Create an account (`{email, password, displayName}`) → `{token, user}` |
+| POST   | `/api/auth/login`                         | -    | Log in (`{email, password}`) → `{token, user}` |
+| GET    | `/api/trips`                              | -    | List the trip catalog                 |
+| GET    | `/api/trips/{tripId}`                     | -    | Get one trip                          |
+| POST   | `/api/trips/{tripId}/group-bookings`      | required | Start a group booking as the caller |
+| POST   | `/api/group-bookings/{bookingId}/participants` | required | Join a group booking as the caller |
+| DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller |
+| GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId` if a valid token is sent) |
+| GET    | `/api/group-bookings/{bookingId}/events`  | -    | SSE stream: a ping each time the booking changes |
 
-Errors: `404` for an unknown trip/booking, `409` for a domain rule violation (group
-full, deadline passed, already finalized), `400` for validation failures.
+Authenticated requests send `Authorization: Bearer <token>`, a JWT (HS256) returned by
+register/login. Its secret and expiration are configured via
+`agency-voyage.jwt.secret` / `agency-voyage.jwt.expiration-ms` in `application.yml`
+(overridable with the `AGENCY_VOYAGE_JWT_SECRET` env var - the default is a dev-only
+value, change it for anything beyond local use).
+
+Errors: `401` for a missing/invalid token on a protected endpoint, `404` for an unknown
+trip/booking, `409` for a domain rule violation (group full, deadline passed, already
+finalized, already joined, email already registered), `400` for validation failures.
 
 ## Testing
 
@@ -152,7 +161,7 @@ into by this work - branches are merged in by hand, in order:
 
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
-`ci-pipelines` → `live-price-updates` → `leave-group-booking`
+`ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication`
 
 ## Simplifications and next steps
 
@@ -172,11 +181,14 @@ Documented deliberately, not accidentally missed:
   poll as a backstop in case an SSE connection drops.
 - **Trips are seed data, not admin-managed.** `TripCatalogSeeder` inserts a handful of
   sample trips on first startup; there's no create/edit flow for the catalog itself.
-- **No auth.** Anyone can create or join a group with any name they type in. "Which
-  participant is me" (so the UI can show a Leave button) is tracked client-side in
-  `localStorage`, keyed by booking id, set the moment a create/join response tells the
-  browser its own new participant id - not a session or identity, just enough for one
-  browser tab to recognize its own entry.
+- **Auth is email/password + JWT, no refresh tokens.** `register`/`login` issue a
+  single long-lived (24h) JWT; there's no refresh flow or revocation - logging out just
+  drops the token client-side. `User` stays a pure identity in `domain` (id, email,
+  display name); the password hash lives only in `infrastructure`
+  (`UserJpaEntity`/`BCryptPasswordHasher`), never touching the domain or application
+  layers. "Which participant is me" is now computed server-side on every response
+  (`GroupBookingResponse.myParticipantId`) from the caller's authenticated `UserId`,
+  replacing the earlier `localStorage`-based heuristic.
 - **Further bonus ideas from the original brainstorm** not built here: waitlists once a
   group is full, referral/invite discounts, multi-currency pricing, an
   event-sourced audit trail for group history.

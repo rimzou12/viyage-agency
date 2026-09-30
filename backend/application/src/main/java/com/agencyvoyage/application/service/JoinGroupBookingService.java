@@ -33,7 +33,8 @@ public final class JoinGroupBookingService implements JoinGroupBookingUseCase {
                 .orElseThrow(() -> new GroupBookingNotFoundException(command.bookingId()));
 
         Instant now = clock.instant();
-        Participant participant = new Participant(ParticipantId.newId(), command.customerName(), now);
+        Participant participant = new Participant(
+                ParticipantId.newId(), command.actingUser().id(), command.actingUser().displayName(), now);
         booking.join(participant, now);
 
         groupBookingRepository.save(booking);

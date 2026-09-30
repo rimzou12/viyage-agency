@@ -1,14 +1,13 @@
 package com.agencyvoyage.application.port.in;
 
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.User;
 import java.util.Objects;
 
-public record CreateGroupBookingCommand(TripId tripId, String customerName) {
+public record CreateGroupBookingCommand(TripId tripId, User actingUser) {
 
     public CreateGroupBookingCommand {
         Objects.requireNonNull(tripId, "tripId must not be null");
-        if (customerName == null || customerName.isBlank()) {
-            throw new IllegalArgumentException("customerName must not be blank");
-        }
+        Objects.requireNonNull(actingUser, "actingUser must not be null");
     }
 }

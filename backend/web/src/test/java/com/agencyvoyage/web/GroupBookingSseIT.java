@@ -2,9 +2,9 @@ package com.agencyvoyage.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.agencyvoyage.web.dto.CreateGroupBookingRequest;
+import com.agencyvoyage.web.dto.AuthResponse;
 import com.agencyvoyage.web.dto.GroupBookingResponse;
-import com.agencyvoyage.web.dto.JoinGroupBookingRequest;
+import com.agencyvoyage.web.dto.RegisterRequest;
 import com.agencyvoyage.web.dto.TripResponse;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -13,9 +13,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -34,23 +38,43 @@ class GroupBookingSseIT extends AbstractApiIT {
         TripResponse[] trips = rest.getForObject(baseUrl() + "/api/trips", TripResponse[].class);
         TripResponse trip = trips[0];
 
-        GroupBookingResponse booking = rest.postForObject(
-                baseUrl() + "/api/trips/" + trip.id() + "/group-bookings",
-                new CreateGroupBookingRequest("Alice"),
-                GroupBookingResponse.class);
+        String aliceToken = registerAndLogin("Alice");
+        GroupBookingResponse booking = rest.exchange(
+                        baseUrl() + "/api/trips/" + trip.id() + "/group-bookings",
+                        HttpMethod.POST,
+                        authed(aliceToken),
+                        GroupBookingResponse.class)
+                .getBody();
 
         CompletableFuture<String> firstEventLine = openSseStreamAndCaptureFirstEventLine(booking.id());
 
         // give the SSE connection a moment to actually register before triggering the event
         Thread.sleep(500);
 
-        rest.postForObject(
+        String bobToken = registerAndLogin("Bob");
+        rest.exchange(
                 baseUrl() + "/api/group-bookings/" + booking.id() + "/participants",
-                new JoinGroupBookingRequest("Bob"),
+                HttpMethod.POST,
+                authed(bobToken),
                 GroupBookingResponse.class);
 
         String eventLine = firstEventLine.get(15, TimeUnit.SECONDS);
         assertThat(eventLine).contains("participant-joined");
+    }
+
+    private String registerAndLogin(String displayName) {
+        String email = displayName.toLowerCase() + "-" + UUID.randomUUID() + "@example.com";
+        AuthResponse response = rest.postForObject(
+                baseUrl() + "/api/auth/register",
+                new RegisterRequest(email, "password123", displayName),
+                AuthResponse.class);
+        return response.token();
+    }
+
+    private HttpEntity<Void> authed(String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        return new HttpEntity<>(headers);
     }
 
     private CompletableFuture<String> openSseStreamAndCaptureFirstEventLine(String bookingId) {

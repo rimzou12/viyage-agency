@@ -1,11 +1,11 @@
 package com.agencyvoyage.domain.exception;
 
 import com.agencyvoyage.domain.booking.GroupBookingId;
-import com.agencyvoyage.domain.booking.ParticipantId;
+import com.agencyvoyage.domain.user.UserId;
 
 public final class ParticipantNotInBookingException extends DomainException {
 
-    public ParticipantNotInBookingException(GroupBookingId bookingId, ParticipantId participantId) {
-        super("Participant " + participantId + " is not part of group booking " + bookingId);
+    public ParticipantNotInBookingException(GroupBookingId bookingId, UserId userId) {
+        super("User " + userId + " is not a participant in group booking " + bookingId);
     }
 }

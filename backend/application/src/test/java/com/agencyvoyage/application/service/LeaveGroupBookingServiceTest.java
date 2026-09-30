@@ -20,6 +20,7 @@ import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -56,8 +57,8 @@ class LeaveGroupBookingServiceTest {
     @Test
     void removesTheParticipantAndPublishesAnEvent() {
         GroupBooking booking = openBooking();
-        ParticipantId bobId = ParticipantId.newId();
-        booking.join(new Participant(bobId, "Bob", NOW), NOW);
+        UserId bobId = UserId.newId();
+        booking.join(new Participant(ParticipantId.newId(), bobId, "Bob", NOW), NOW);
         when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
 
         GroupBooking result = service.leaveGroupBooking(new LeaveGroupBookingCommand(booking.id(), bobId));
@@ -73,7 +74,7 @@ class LeaveGroupBookingServiceTest {
         when(groupBookingRepository.findById(unknownId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.leaveGroupBooking(
-                        new LeaveGroupBookingCommand(unknownId, ParticipantId.newId())))
+                        new LeaveGroupBookingCommand(unknownId, UserId.newId())))
                 .isInstanceOf(GroupBookingNotFoundException.class);
     }
 
@@ -83,7 +84,7 @@ class LeaveGroupBookingServiceTest {
         when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
 
         assertThatThrownBy(() -> service.leaveGroupBooking(
-                        new LeaveGroupBookingCommand(booking.id(), ParticipantId.newId())))
+                        new LeaveGroupBookingCommand(booking.id(), UserId.newId())))
                 .isInstanceOf(ParticipantNotInBookingException.class);
     }
 
@@ -100,7 +101,7 @@ class LeaveGroupBookingServiceTest {
                 5,
                 NOW.plus(1, ChronoUnit.DAYS),
                 schedule);
-        Participant creator = new Participant(ParticipantId.newId(), "Alice", NOW);
+        Participant creator = new Participant(ParticipantId.newId(), UserId.newId(), "Alice", NOW);
         return GroupBooking.open(GroupBookingId.newId(), trip, creator, NOW);
     }
 }

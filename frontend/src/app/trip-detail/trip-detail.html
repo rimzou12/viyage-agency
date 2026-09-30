@@ -46,12 +46,15 @@
     <section class="start-group">
       <h2>Start a group</h2>
       <p>Be the first to join - others can then hop in and the price drops for everyone.</p>
-      <form (submit)="$event.preventDefault(); startGroup(nameInput.value)">
-        <input #nameInput type="text" placeholder="Your name" required [disabled]="creating()" />
-        <button type="submit" [disabled]="creating()">
-          {{ creating() ? 'Starting...' : 'Start this group' }}
+      @if (auth.isLoggedIn()) {
+        <button type="button" [disabled]="creating()" (click)="startGroup()">
+          {{ creating() ? 'Starting...' : 'Start this group as ' + auth.currentUser()?.displayName }}
         </button>
-      </form>
+      } @else {
+        <a class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/trips/' + t.id }">
+          Log in to start a group
+        </a>
+      }
       @if (createError()) {
         <p class="error">{{ createError() }}</p>
       }

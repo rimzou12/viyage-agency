@@ -31,3 +31,7 @@ server:
 agency-voyage:
   group-booking:
     finalization-check-interval-ms: 30000
+  jwt:
+    # Dev-only default. Override via AGENCY_VOYAGE_JWT_SECRET in any real deployment.
+    secret: ${AGENCY_VOYAGE_JWT_SECRET:dev-only-secret-key-change-me-in-production-32+bytes}
+    expiration-ms: 86400000 # 24h

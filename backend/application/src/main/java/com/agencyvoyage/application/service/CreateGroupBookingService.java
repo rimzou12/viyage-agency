@@ -41,7 +41,8 @@ public final class CreateGroupBookingService implements CreateGroupBookingUseCas
                 .orElseThrow(() -> new TripNotFoundException(command.tripId()));
 
         Instant now = clock.instant();
-        Participant creator = new Participant(ParticipantId.newId(), command.customerName(), now);
+        Participant creator = new Participant(
+                ParticipantId.newId(), command.actingUser().id(), command.actingUser().displayName(), now);
         GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, creator, now);
 
         groupBookingRepository.save(booking);

@@ -3,14 +3,14 @@ package com.agencyvoyage.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agencyvoyage.infrastructure.messaging.kafka.KafkaTopics;
-import com.agencyvoyage.web.dto.CreateGroupBookingRequest;
-import com.agencyvoyage.web.dto.ErrorResponse;
+import com.agencyvoyage.web.dto.AuthResponse;
 import com.agencyvoyage.web.dto.GroupBookingResponse;
-import com.agencyvoyage.web.dto.JoinGroupBookingRequest;
+import com.agencyvoyage.web.dto.RegisterRequest;
 import com.agencyvoyage.web.dto.TripResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -19,6 +19,8 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -53,20 +55,17 @@ class GroupBookingApiIT extends AbstractApiIT {
         assertThat(trips).isNotEmpty();
         TripResponse trip = trips[0];
 
-        GroupBookingResponse created = rest.postForObject(
-                baseUrl() + "/api/trips/" + trip.id() + "/group-bookings",
-                new CreateGroupBookingRequest("Alice"),
-                GroupBookingResponse.class);
+        GroupBookingResponse created = post(
+                baseUrl() + "/api/trips/" + trip.id() + "/group-bookings", registerAndLogin("Alice"));
         assertThat(created.status()).isEqualTo("OPEN");
         assertThat(created.participantCount()).isEqualTo(1);
         assertThat(created.currentPricePerSeat()).isEqualByComparingTo(trip.basePrice());
 
         GroupBookingResponse afterOneMoreJoin = null;
         for (int i = 0; i < trip.priceTiers().get(0).minParticipants() - 1; i++) {
-            afterOneMoreJoin = rest.postForObject(
+            afterOneMoreJoin = post(
                     baseUrl() + "/api/group-bookings/" + created.id() + "/participants",
-                    new JoinGroupBookingRequest("Participant" + i),
-                    GroupBookingResponse.class);
+                    registerAndLogin("Participant" + i));
         }
         assertThat(afterOneMoreJoin).isNotNull();
         assertThat(afterOneMoreJoin.participantCount()).isEqualTo(trip.priceTiers().get(0).minParticipants());
@@ -87,21 +86,17 @@ class GroupBookingApiIT extends AbstractApiIT {
         TripResponse[] trips = rest.getForObject(baseUrl() + "/api/trips", TripResponse[].class);
         TripResponse trip = trips[0];
 
-        GroupBookingResponse created = rest.postForObject(
-                baseUrl() + "/api/trips/" + trip.id() + "/group-bookings",
-                new CreateGroupBookingRequest("Alice"),
-                GroupBookingResponse.class);
-        GroupBookingResponse afterBobJoined = rest.postForObject(
-                baseUrl() + "/api/group-bookings/" + created.id() + "/participants",
-                new JoinGroupBookingRequest("Bob"),
-                GroupBookingResponse.class);
+        GroupBookingResponse created = post(
+                baseUrl() + "/api/trips/" + trip.id() + "/group-bookings", registerAndLogin("Alice"));
+        String bobToken = registerAndLogin("Bob");
+        GroupBookingResponse afterBobJoined =
+                post(baseUrl() + "/api/group-bookings/" + created.id() + "/participants", bobToken);
         assertThat(afterBobJoined.myParticipantId()).isNotNull();
 
         GroupBookingResponse afterBobLeft = rest.exchange(
-                        baseUrl() + "/api/group-bookings/" + created.id() + "/participants/"
-                                + afterBobJoined.myParticipantId(),
+                        baseUrl() + "/api/group-bookings/" + created.id() + "/participants/me",
                         HttpMethod.DELETE,
-                        null,
+                        authed(bobToken),
                         GroupBookingResponse.class)
                 .getBody();
 
@@ -116,13 +111,21 @@ class GroupBookingApiIT extends AbstractApiIT {
     @Test
     void returns404ForAnUnknownTrip() {
         try {
-            rest.postForObject(
-                    baseUrl() + "/api/trips/" + java.util.UUID.randomUUID() + "/group-bookings",
-                    new CreateGroupBookingRequest("Alice"),
-                    GroupBookingResponse.class);
+            post(baseUrl() + "/api/trips/" + UUID.randomUUID() + "/group-bookings", registerAndLogin("Alice"));
             org.junit.jupiter.api.Assertions.fail("expected a 404");
         } catch (RestClientException e) {
             assertThat(e.getMessage()).contains("404");
+        }
+    }
+
+    @Test
+    void returns401WithoutAToken() {
+        try {
+            rest.postForObject(
+                    baseUrl() + "/api/trips/" + UUID.randomUUID() + "/group-bookings", null, String.class);
+            org.junit.jupiter.api.Assertions.fail("expected a 401");
+        } catch (RestClientException e) {
+            assertThat(e.getMessage()).contains("401");
         }
     }
 
@@ -136,27 +139,42 @@ class GroupBookingApiIT extends AbstractApiIT {
             }
         }
 
-        GroupBookingResponse booking = rest.postForObject(
-                baseUrl() + "/api/trips/" + smallestGroupTrip.id() + "/group-bookings",
-                new CreateGroupBookingRequest("Alice"),
-                GroupBookingResponse.class);
+        GroupBookingResponse booking = post(
+                baseUrl() + "/api/trips/" + smallestGroupTrip.id() + "/group-bookings", registerAndLogin("Alice"));
 
         for (int i = booking.participantCount(); i < smallestGroupTrip.maxParticipants(); i++) {
-            booking = rest.postForObject(
+            booking = post(
                     baseUrl() + "/api/group-bookings/" + booking.id() + "/participants",
-                    new JoinGroupBookingRequest("Filler" + i),
-                    GroupBookingResponse.class);
+                    registerAndLogin("Filler" + i));
         }
 
         try {
-            rest.postForObject(
+            post(
                     baseUrl() + "/api/group-bookings/" + booking.id() + "/participants",
-                    new JoinGroupBookingRequest("OneTooMany"),
-                    GroupBookingResponse.class);
+                    registerAndLogin("OneTooMany"));
             org.junit.jupiter.api.Assertions.fail("expected a 409");
         } catch (RestClientException e) {
             assertThat(e.getMessage()).contains("409");
         }
+    }
+
+    private String registerAndLogin(String displayName) {
+        String email = displayName.toLowerCase() + "-" + UUID.randomUUID() + "@example.com";
+        AuthResponse response = rest.postForObject(
+                baseUrl() + "/api/auth/register",
+                new RegisterRequest(email, "password123", displayName),
+                AuthResponse.class);
+        return response.token();
+    }
+
+    private GroupBookingResponse post(String url, String token) {
+        return rest.exchange(url, HttpMethod.POST, authed(token), GroupBookingResponse.class).getBody();
+    }
+
+    private HttpEntity<Void> authed(String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        return new HttpEntity<>(headers);
     }
 
     private ConsumerRecord<String, String> pollUntilRecordForBooking(String bookingId) {

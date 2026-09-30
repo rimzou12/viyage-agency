@@ -35,6 +35,17 @@ export interface GroupBooking {
   deadline: string;
   priceTiers: PriceTier[];
   participants: Participant[];
-  /** Present only on the response to a create/join call - which participant is "me". */
+  /** Which participant (if any) belongs to the caller, computed from the auth token. */
   myParticipantId: string | null;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
 }

@@ -42,12 +42,15 @@
       } @else if (seatsRemaining(b) > 0) {
         <section class="join">
           <h2>Join this group</h2>
-          <form (submit)="$event.preventDefault(); join(nameInput.value); nameInput.value = ''">
-            <input #nameInput type="text" placeholder="Your name" required [disabled]="joining()" />
-            <button type="submit" [disabled]="joining()">
-              {{ joining() ? 'Joining...' : 'Join' }}
+          @if (auth.isLoggedIn()) {
+            <button type="button" [disabled]="joining()" (click)="join()">
+              {{ joining() ? 'Joining...' : 'Join as ' + auth.currentUser()?.displayName }}
             </button>
-          </form>
+          } @else {
+            <a class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
+              Log in to join
+            </a>
+          }
           @if (joinError()) {
             <p class="error">{{ joinError() }}</p>
           }

@@ -3,6 +3,7 @@ package com.agencyvoyage.web.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
@@ -13,6 +14,7 @@ import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
+import com.agencyvoyage.domain.booking.GroupBookingStatus;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.exception.GroupFullException;
@@ -20,6 +22,11 @@ import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.User;
+import com.agencyvoyage.domain.user.UserId;
+import com.agencyvoyage.infrastructure.security.JwtTokenParser;
+import com.agencyvoyage.web.config.CorsConfig;
+import com.agencyvoyage.web.security.SecurityConfig;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -28,11 +35,21 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
+/**
+ * {@code SecurityConfig} is explicitly imported (it isn't controller-adjacent
+ * infrastructure @WebMvcTest would pick up on its own) so {@code @AuthenticationPrincipal}
+ * actually resolves: {@code .with(authentication(...))} relies on Spring Security's
+ * own context filter to install the test authentication per request, so the filter
+ * chain needs to genuinely run here, not be stubbed out.
+ */
 @WebMvcTest(GroupBookingController.class)
+@Import({SecurityConfig.class, CorsConfig.class})
 class GroupBookingControllerTest {
 
     @Autowired
@@ -50,15 +67,28 @@ class GroupBookingControllerTest {
     @MockitoBean
     private GetGroupBookingUseCase getGroupBookingUseCase;
 
+    /**
+     * Not used directly by this controller, but JwtAuthenticationFilter is a servlet
+     * Filter, so @WebMvcTest's scanning constructs it regardless of which controller
+     * is under test - it needs this dependency satisfied to build the context at all.
+     */
+    @MockitoBean
+    private JwtTokenParser jwtTokenParser;
+
+    private static final User ALICE = new User(UserId.newId(), "alice@example.com", "Alice");
+
     @Test
-    void rejectsAJoinRequestWithABlankCustomerName() {
-        GroupBookingId bookingId = GroupBookingId.newId();
+    void createReturns201WithTheBookingAndMyParticipantId() {
+        GroupBooking booking = booking(GroupBookingId.newId(), ALICE.id());
+        when(createGroupBookingUseCase.createGroupBooking(any())).thenReturn(booking);
 
         assertThat(mvc.post()
-                        .uri("/api/group-bookings/" + bookingId + "/participants")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"customerName\":\"  \"}"))
-                .hasStatus(400);
+                        .uri("/api/trips/" + TripId.newId() + "/group-bookings")
+                        .with(asAlice()))
+                .hasStatus(201)
+                .bodyJson()
+                .extractingPath("$.myParticipantId")
+                .isNotNull();
     }
 
     @Test
@@ -69,8 +99,7 @@ class GroupBookingControllerTest {
 
         assertThat(mvc.post()
                         .uri("/api/group-bookings/" + bookingId + "/participants")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"customerName\":\"Bob\"}"))
+                        .with(asAlice()))
                 .hasStatus(409);
     }
 
@@ -84,9 +113,9 @@ class GroupBookingControllerTest {
     }
 
     @Test
-    void getReturnsTheBookingAsJson() {
+    void getReturnsTheBookingAsJsonWithoutRequiringAuthentication() {
         GroupBookingId bookingId = GroupBookingId.newId();
-        GroupBooking booking = booking(bookingId);
+        GroupBooking booking = booking(bookingId, ALICE.id());
         when(getGroupBookingUseCase.getGroupBooking(bookingId)).thenReturn(booking);
 
         assertThat(mvc.get().uri("/api/group-bookings/" + bookingId))
@@ -99,11 +128,13 @@ class GroupBookingControllerTest {
     @Test
     void leaveReturnsTheUpdatedBookingAsJson() {
         GroupBookingId bookingId = GroupBookingId.newId();
-        GroupBooking booking = booking(bookingId);
+        GroupBooking booking = booking(bookingId, ALICE.id());
         when(leaveGroupBookingUseCase.leaveGroupBooking(any(LeaveGroupBookingCommand.class)))
                 .thenReturn(booking);
 
-        assertThat(mvc.delete().uri("/api/group-bookings/" + bookingId + "/participants/" + ParticipantId.newId()))
+        assertThat(mvc.delete()
+                        .uri("/api/group-bookings/" + bookingId + "/participants/me")
+                        .with(asAlice()))
                 .hasStatusOk()
                 .bodyJson()
                 .extractingPath("$.status")
@@ -111,17 +142,23 @@ class GroupBookingControllerTest {
     }
 
     @Test
-    void returns409WhenLeavingWithAParticipantNotInTheBooking() {
+    void returns409WhenLeavingAndYouAreNotAParticipant() {
         GroupBookingId bookingId = GroupBookingId.newId();
-        ParticipantId participantId = ParticipantId.newId();
         when(leaveGroupBookingUseCase.leaveGroupBooking(any(LeaveGroupBookingCommand.class)))
-                .thenThrow(new ParticipantNotInBookingException(bookingId, participantId));
+                .thenThrow(new ParticipantNotInBookingException(bookingId, ALICE.id()));
 
-        assertThat(mvc.delete().uri("/api/group-bookings/" + bookingId + "/participants/" + participantId))
+        assertThat(mvc.delete()
+                        .uri("/api/group-bookings/" + bookingId + "/participants/me")
+                        .with(asAlice()))
                 .hasStatus(409);
     }
 
-    private static GroupBooking booking(GroupBookingId id) {
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor asAlice() {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(ALICE, null, List.of());
+        return authentication(authentication);
+    }
+
+    private static GroupBooking booking(GroupBookingId id, UserId creatorUserId) {
         PricingSchedule schedule = PricingSchedule.of(new BigDecimal("1000"), List.of(), 5);
         Trip trip = new Trip(
                 TripId.newId(),
@@ -133,7 +170,7 @@ class GroupBookingControllerTest {
                 5,
                 Instant.now().plus(30, ChronoUnit.DAYS),
                 schedule);
-        Participant creator = new Participant(ParticipantId.newId(), "Alice", Instant.now());
+        Participant creator = new Participant(ParticipantId.newId(), creatorUserId, "Alice", Instant.now());
         return GroupBooking.reconstitute(
                 id,
                 trip.id(),
@@ -141,7 +178,7 @@ class GroupBookingControllerTest {
                 trip.maxParticipants(),
                 trip.bookingDeadline(),
                 schedule,
-                com.agencyvoyage.domain.booking.GroupBookingStatus.OPEN,
+                GroupBookingStatus.OPEN,
                 List.of(creator));
     }
 }

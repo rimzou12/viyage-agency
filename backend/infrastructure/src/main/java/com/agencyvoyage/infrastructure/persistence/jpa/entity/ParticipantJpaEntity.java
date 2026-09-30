@@ -17,6 +17,9 @@ public class ParticipantJpaEntity {
     @Id
     private UUID id;
 
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
     @Column(name = "customer_name", nullable = false)
     private String customerName;
 
@@ -31,14 +34,19 @@ public class ParticipantJpaEntity {
         // JPA
     }
 
-    public ParticipantJpaEntity(UUID id, String customerName, Instant joinedAt) {
+    public ParticipantJpaEntity(UUID id, UUID userId, String customerName, Instant joinedAt) {
         this.id = id;
+        this.userId = userId;
         this.customerName = customerName;
         this.joinedAt = joinedAt;
     }
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
     }
 
     public String getCustomerName() {

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agencyvoyage.domain.exception.AlreadyFinalizedException;
+import com.agencyvoyage.domain.exception.AlreadyJoinedException;
 import com.agencyvoyage.domain.exception.BookingClosedException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
@@ -13,6 +14,7 @@ import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -85,6 +87,17 @@ class GroupBookingTest {
     }
 
     @Test
+    void cannotJoinTwiceAsTheSameUser() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        UserId bobId = UserId.newId();
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        booking.join(new Participant(ParticipantId.newId(), bobId, "Bob", NOW), NOW);
+
+        assertThatThrownBy(() -> booking.join(new Participant(ParticipantId.newId(), bobId, "Bob", NOW), NOW))
+                .isInstanceOf(AlreadyJoinedException.class);
+    }
+
+    @Test
     void leavingRemovesTheParticipantAndReducesThePrice() {
         Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
         GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
@@ -92,7 +105,7 @@ class GroupBookingTest {
         booking.join(bob, NOW);
         assertThat(booking.currentPricePerSeat()).isEqualByComparingTo("800");
 
-        booking.leave(bob.id(), NOW);
+        booking.leave(bob.userId(), NOW);
 
         assertThat(booking.currentParticipantCount()).isEqualTo(1);
         assertThat(booking.participants()).extracting(Participant::customerName).containsExactly("Alice");
@@ -100,11 +113,11 @@ class GroupBookingTest {
     }
 
     @Test
-    void cannotLeaveWithAnUnknownParticipantId() {
+    void cannotLeaveWithAnUnknownUserId() {
         Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
         GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
 
-        assertThatThrownBy(() -> booking.leave(ParticipantId.newId(), NOW))
+        assertThatThrownBy(() -> booking.leave(UserId.newId(), NOW))
                 .isInstanceOf(ParticipantNotInBookingException.class);
     }
 
@@ -112,9 +125,9 @@ class GroupBookingTest {
     void cannotLeaveAfterTheDeadline() {
         Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
         GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
-        Participant creatorId = booking.participants().get(0);
+        Participant creator = booking.participants().get(0);
 
-        assertThatThrownBy(() -> booking.leave(creatorId.id(), NOW.plus(2, ChronoUnit.DAYS)))
+        assertThatThrownBy(() -> booking.leave(creator.userId(), NOW.plus(2, ChronoUnit.DAYS)))
                 .isInstanceOf(DeadlineExpiredException.class);
     }
 
@@ -125,7 +138,7 @@ class GroupBookingTest {
         Participant creator = booking.participants().get(0);
         booking.finalizeBooking(NOW.plus(2, ChronoUnit.DAYS));
 
-        assertThatThrownBy(() -> booking.leave(creator.id(), NOW.plus(2, ChronoUnit.DAYS)))
+        assertThatThrownBy(() -> booking.leave(creator.userId(), NOW.plus(2, ChronoUnit.DAYS)))
                 .isInstanceOf(BookingClosedException.class);
     }
 
@@ -188,6 +201,6 @@ class GroupBookingTest {
     }
 
     private static Participant participant(String name, Instant joinedAt) {
-        return new Participant(ParticipantId.newId(), name, joinedAt);
+        return new Participant(ParticipantId.newId(), UserId.newId(), name, joinedAt);
     }
 }
