@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.agencyvoyage.application.port.out.event.GroupBookingFinalizedEvent;
 import com.agencyvoyage.application.port.out.event.ParticipantJoinedEvent;
+import com.agencyvoyage.application.port.out.event.ParticipantLeftEvent;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
 import com.agencyvoyage.domain.booking.ParticipantId;
@@ -48,7 +49,8 @@ class KafkaGroupBookingEventPublisherIT extends AbstractKafkaIT {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         rawConsumer = new KafkaConsumer<>(props);
-        rawConsumer.subscribe(java.util.List.of(KafkaTopics.PARTICIPANT_JOINED, KafkaTopics.FINALIZED));
+        rawConsumer.subscribe(java.util.List.of(
+                KafkaTopics.PARTICIPANT_JOINED, KafkaTopics.PARTICIPANT_LEFT, KafkaTopics.FINALIZED));
     }
 
     @AfterEach
@@ -77,6 +79,27 @@ class KafkaGroupBookingEventPublisherIT extends AbstractKafkaIT {
         assertThat(payload.get("bookingId")).isEqualTo(bookingId.toString());
         assertThat(payload.get("customerName")).isEqualTo("Alice");
         assertThat(payload.get("participantCount")).isEqualTo(2);
+    }
+
+    @Test
+    void publishesParticipantLeftAsJsonKeyedByBookingId() throws Exception {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        ParticipantLeftEvent event = new ParticipantLeftEvent(
+                bookingId,
+                TripId.newId(),
+                ParticipantId.newId(),
+                1,
+                new BigDecimal("1000.00"),
+                Instant.parse("2027-01-01T00:00:00Z"));
+
+        publisher.publishParticipantLeft(event);
+
+        ConsumerRecord<String, String> record = pollUntilRecordOnTopic(KafkaTopics.PARTICIPANT_LEFT);
+        assertThat(record.key()).isEqualTo(bookingId.toString());
+
+        Map<?, ?> payload = objectMapper.readValue(record.value(), Map.class);
+        assertThat(payload.get("bookingId")).isEqualTo(bookingId.toString());
+        assertThat(payload.get("participantCount")).isEqualTo(1);
     }
 
     @Test

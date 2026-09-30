@@ -5,6 +5,7 @@ import com.agencyvoyage.domain.exception.BookingClosedException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
@@ -101,6 +102,23 @@ public final class GroupBooking {
             throw new GroupFullException(id, maxParticipants);
         }
         participants.add(participant);
+    }
+
+    /** Removes a participant, freeing their seat and re-pricing the group for everyone left. */
+    public void leave(ParticipantId participantId, Instant now) {
+        Objects.requireNonNull(participantId, "participantId must not be null");
+        Objects.requireNonNull(now, "now must not be null");
+
+        if (status != GroupBookingStatus.OPEN) {
+            throw new BookingClosedException(id, status);
+        }
+        if (!now.isBefore(deadline)) {
+            throw new DeadlineExpiredException(deadline, now);
+        }
+        boolean removed = participants.removeIf(p -> p.id().equals(participantId));
+        if (!removed) {
+            throw new ParticipantNotInBookingException(id, participantId);
+        }
     }
 
     /** Confirms or cancels the group once its deadline has passed, based on minimum participation. */

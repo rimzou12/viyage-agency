@@ -95,6 +95,31 @@ h1 {
   color: #a3271e;
 }
 
+.mine {
+  margin-bottom: 2rem;
+
+  p {
+    margin: 0 0 0.6rem;
+    font-size: 0.9rem;
+    color: #5b6472;
+  }
+
+  .leave {
+    padding: 0.5rem 1rem;
+    border: 1px solid #cfd4db;
+    border-radius: 8px;
+    background: #fff;
+    color: #a3271e;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+}
+
 .join {
   margin-bottom: 2rem;
 
@@ -152,5 +177,18 @@ h1 {
     border-radius: 999px;
     background: #f0f1f3;
     font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .you {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: #1a6b3c;
+    color: #fff;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
 }

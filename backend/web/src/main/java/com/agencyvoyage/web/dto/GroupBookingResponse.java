@@ -15,9 +15,19 @@ public record GroupBookingResponse(
         BigDecimal currentPricePerSeat,
         Instant deadline,
         List<PriceTierResponse> priceTiers,
-        List<ParticipantResponse> participants) {
+        List<ParticipantResponse> participants,
+        String myParticipantId) {
 
     public static GroupBookingResponse from(GroupBooking booking) {
+        return from(booking, null);
+    }
+
+    /**
+     * @param myParticipantId the id of the participant this specific request just
+     *                        created/added, if any - lets the caller remember "which
+     *                        one is me" without any auth. Null for a plain read.
+     */
+    public static GroupBookingResponse from(GroupBooking booking, String myParticipantId) {
         List<ParticipantResponse> participants =
                 booking.participants().stream().map(ParticipantResponse::from).toList();
         List<PriceTierResponse> priceTiers = booking.pricingSchedule().tiers().stream()
@@ -33,6 +43,7 @@ public record GroupBookingResponse(
                 booking.currentPricePerSeat(),
                 booking.deadline(),
                 priceTiers,
-                participants);
+                participants,
+                myParticipantId);
     }
 }

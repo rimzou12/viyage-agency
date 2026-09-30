@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.GroupBookingFinalizedMessage;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantJoinedMessage;
+import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantLeftMessage;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,17 @@ class GroupBookingKafkaBridgeTest {
         bridge.onParticipantJoined(message);
 
         verify(broadcaster).broadcast("booking-1", "participant-joined");
+    }
+
+    @Test
+    void forwardsParticipantLeftToTheBroadcaster() {
+        GroupBookingKafkaBridge bridge = new GroupBookingKafkaBridge(broadcaster);
+        ParticipantLeftMessage message = new ParticipantLeftMessage(
+                "booking-1", "trip-1", "participant-1", 1, new BigDecimal("1000"), Instant.now());
+
+        bridge.onParticipantLeft(message);
+
+        verify(broadcaster).broadcast("booking-1", "participant-left");
     }
 
     @Test

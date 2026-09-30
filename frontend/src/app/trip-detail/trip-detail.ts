@@ -48,7 +48,12 @@ export class TripDetail {
     this.creating.set(true);
     this.createError.set(null);
     this.groupBookingService.createGroupBooking(trip.id, customerName.trim()).subscribe({
-      next: (booking) => this.router.navigate(['/group-bookings', booking.id]),
+      next: (booking) => {
+        if (booking.myParticipantId) {
+          this.groupBookingService.rememberMyParticipantId(booking.id, booking.myParticipantId);
+        }
+        this.router.navigate(['/group-bookings', booking.id]);
+      },
       error: (err: HttpErrorResponse) => {
         this.creating.set(false);
         this.createError.set(apiErrorMessage(err, 'Could not start a group booking.'));

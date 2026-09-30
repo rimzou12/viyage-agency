@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class GroupBookingMapper {
 
@@ -42,12 +43,19 @@ public final class GroupBookingMapper {
 
     /**
      * Applies the in-memory aggregate's current state onto an already-managed JPA
-     * entity. Only participants not yet persisted are appended - participants are
-     * immutable once created, and re-adding an already-managed one as a fresh Java
-     * object would make Hibernate see two conflicting instances for the same id.
+     * entity: removes rows for participants who left (triggers orphanRemoval) and
+     * appends rows for participants not yet persisted. Participants are immutable
+     * once created, so an already-managed one is never touched - re-adding it as a
+     * fresh Java object would make Hibernate see two conflicting instances for the
+     * same id.
      */
     public static void updateEntity(GroupBookingJpaEntity entity, GroupBooking booking) {
         entity.setStatus(booking.status());
+
+        Set<UUID> stillPresent = booking.participants().stream()
+                .map(p -> p.id().value())
+                .collect(Collectors.toSet());
+        entity.getParticipants().removeIf(existing -> !stillPresent.contains(existing.getId()));
 
         Set<UUID> alreadyPersisted = new HashSet<>();
         for (ParticipantJpaEntity existing : entity.getParticipants()) {
