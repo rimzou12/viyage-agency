@@ -1,0 +1,24 @@
+<div class="carousel" role="group" aria-roledescription="carousel">
+  <div class="track" [style.transform]="'translateX(-' + index() * 100 + '%)'">
+    @for (src of images(); track src) {
+      <img [src]="src" alt="" loading="lazy" />
+    }
+  </div>
+
+  @if (images().length > 1) {
+    <button type="button" class="nav prev" aria-label="Previous photo" (click)="previous($event)">&#10094;</button>
+    <button type="button" class="nav next" aria-label="Next photo" (click)="next($event)">&#10095;</button>
+
+    <div class="dots">
+      @for (i of indices(); track i) {
+        <button
+          type="button"
+          class="dot"
+          [class.active]="i === index()"
+          [attr.aria-label]="'Go to photo ' + (i + 1)"
+          (click)="goTo(i, $event)"
+        ></button>
+      }
+    </div>
+  }
+</div>
