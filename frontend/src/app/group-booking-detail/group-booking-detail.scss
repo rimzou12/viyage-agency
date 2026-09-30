@@ -189,3 +189,83 @@ h1 {
     letter-spacing: 0.02em;
   }
 }
+
+.history {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e5ea;
+
+  h2 {
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+  }
+
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    position: relative;
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 1.1rem;
+    padding-left: 0.1rem;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 14px;
+      bottom: -2px;
+      width: 2px;
+      background: #e2e5ea;
+    }
+
+    &:last-child {
+      padding-bottom: 0;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  .dot {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    margin-top: 3px;
+    border-radius: 50%;
+    background: #9aa3af;
+    z-index: 1;
+  }
+
+  li.joined .dot {
+    background: #1a6b3c;
+  }
+
+  li.left .dot {
+    background: #a3271e;
+  }
+
+  li.finalized .dot {
+    background: #1a4fa0;
+  }
+
+  .entry {
+    flex: 1;
+  }
+
+  .what {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .when {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: #5b6472;
+  }
+}

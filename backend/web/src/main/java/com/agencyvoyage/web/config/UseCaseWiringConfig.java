@@ -2,6 +2,7 @@ package com.agencyvoyage.web.config;
 
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.FinalizeGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetTripUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
@@ -9,6 +10,7 @@ import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.in.LoginUseCase;
 import com.agencyvoyage.application.port.in.RegisterUserUseCase;
+import com.agencyvoyage.application.port.out.AuditTrailRepository;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
 import com.agencyvoyage.application.port.out.PasswordHasher;
@@ -17,6 +19,7 @@ import com.agencyvoyage.application.port.out.TripRepository;
 import com.agencyvoyage.application.port.out.UserRepository;
 import com.agencyvoyage.application.service.CreateGroupBookingService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
+import com.agencyvoyage.application.service.GetAuditTrailService;
 import com.agencyvoyage.application.service.GetGroupBookingService;
 import com.agencyvoyage.application.service.JoinGroupBookingService;
 import com.agencyvoyage.application.service.LeaveGroupBookingService;
@@ -80,6 +83,11 @@ public class UseCaseWiringConfig {
     @Bean
     public GetGroupBookingUseCase getGroupBookingUseCase(GroupBookingRepository groupBookingRepository) {
         return new GetGroupBookingService(groupBookingRepository);
+    }
+
+    @Bean
+    public GetAuditTrailUseCase getAuditTrailUseCase(AuditTrailRepository auditTrailRepository) {
+        return new GetAuditTrailService(auditTrailRepository);
     }
 
     @Bean

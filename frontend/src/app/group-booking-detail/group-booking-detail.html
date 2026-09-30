@@ -73,5 +73,22 @@
         }
       </ul>
     </section>
+
+    @if (auditTrail().length > 0) {
+      <section class="history">
+        <h2>History</h2>
+        <ol>
+          @for (event of auditTrailNewestFirst(); track $index) {
+            <li [class]="event.type.toLowerCase().replace('participant_', '')">
+              <span class="dot"></span>
+              <div class="entry">
+                <p class="what">{{ describeEvent(event) }}</p>
+                <p class="when">{{ event.occurredAt | date: 'medium' }}</p>
+              </div>
+            </li>
+          }
+        </ol>
+      </section>
+    }
   }
 </main>

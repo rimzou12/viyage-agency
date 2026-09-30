@@ -2,6 +2,7 @@ package com.agencyvoyage.web.controller;
 
 import com.agencyvoyage.application.port.in.CreateGroupBookingCommand;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
@@ -11,7 +12,9 @@ import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.trip.TripId;
 import com.agencyvoyage.domain.user.User;
+import com.agencyvoyage.web.dto.AuditEventResponse;
 import com.agencyvoyage.web.dto.GroupBookingResponse;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,16 +32,19 @@ public class GroupBookingController {
     private final JoinGroupBookingUseCase joinGroupBookingUseCase;
     private final LeaveGroupBookingUseCase leaveGroupBookingUseCase;
     private final GetGroupBookingUseCase getGroupBookingUseCase;
+    private final GetAuditTrailUseCase getAuditTrailUseCase;
 
     public GroupBookingController(
             CreateGroupBookingUseCase createGroupBookingUseCase,
             JoinGroupBookingUseCase joinGroupBookingUseCase,
             LeaveGroupBookingUseCase leaveGroupBookingUseCase,
-            GetGroupBookingUseCase getGroupBookingUseCase) {
+            GetGroupBookingUseCase getGroupBookingUseCase,
+            GetAuditTrailUseCase getAuditTrailUseCase) {
         this.createGroupBookingUseCase = Objects.requireNonNull(createGroupBookingUseCase);
         this.joinGroupBookingUseCase = Objects.requireNonNull(joinGroupBookingUseCase);
         this.leaveGroupBookingUseCase = Objects.requireNonNull(leaveGroupBookingUseCase);
         this.getGroupBookingUseCase = Objects.requireNonNull(getGroupBookingUseCase);
+        this.getAuditTrailUseCase = Objects.requireNonNull(getAuditTrailUseCase);
     }
 
     @PostMapping("/api/trips/{tripId}/group-bookings")
@@ -71,5 +77,12 @@ public class GroupBookingController {
             @PathVariable String bookingId, @AuthenticationPrincipal User currentUser) {
         GroupBooking booking = getGroupBookingUseCase.getGroupBooking(GroupBookingId.of(bookingId));
         return GroupBookingResponse.from(booking, currentUser == null ? null : currentUser.id());
+    }
+
+    @GetMapping("/api/group-bookings/{bookingId}/audit-trail")
+    public List<AuditEventResponse> getAuditTrail(@PathVariable String bookingId) {
+        return getAuditTrailUseCase.getAuditTrail(GroupBookingId.of(bookingId)).stream()
+                .map(AuditEventResponse::from)
+                .toList();
     }
 }

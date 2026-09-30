@@ -48,14 +48,20 @@ Spring Kafka). `web` is the only module that wires everything together
   the minimum was reached by the deadline, cancels otherwise).
 
 **Event flow:** every join (including the creator's) publishes a
-`ParticipantJoinedEvent` to Kafka; every finalization publishes a
-`GroupBookingFinalizedEvent`. A `GroupBookingFinalizationScheduler` periodically finds
-`OPEN` bookings past their deadline and finalizes them. Two independent consumer groups
-read both topics: a `NotificationKafkaListener` that logs them - see
-[Simplifications](#simplifications-and-next-steps) for why that isn't its own service -
-and a `GroupBookingKafkaBridge` that fans a "this booking changed" ping out over SSE
-(`GroupBookingEventBroadcaster`) to every browser tab watching that booking, so
-`GroupBookingDetail` updates live instead of waiting for its next poll.
+`ParticipantJoinedEvent` to Kafka, every leave a `ParticipantLeftEvent`, every
+finalization a `GroupBookingFinalizedEvent`. A `GroupBookingFinalizationScheduler`
+periodically finds `OPEN` bookings past their deadline and finalizes them. Three
+independent consumer groups read these topics: a `NotificationKafkaListener` that logs
+them - see [Simplifications](#simplifications-and-next-steps) for why that isn't its
+own service - a `GroupBookingKafkaBridge` that fans a "this booking changed" ping out
+over SSE (`GroupBookingEventBroadcaster`) to every browser tab watching that booking so
+`GroupBookingDetail` updates live instead of waiting for its next poll, and an
+`AuditTrailKafkaListener` that persists every event as one row in an `audit_event`
+table - the group booking's full history, queryable via
+`GET /api/group-bookings/{bookingId}/audit-trail` and shown as a timeline on the
+booking page. Being built from the same events the other two consumers already read is
+the point: the audit trail costs nothing extra to keep in sync, and a slow or failing
+consumer on one topic never blocks the others, since each has its own consumer group.
 
 ## Business rules
 
@@ -106,6 +112,7 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller |
 | GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId` if a valid token is sent) |
 | GET    | `/api/group-bookings/{bookingId}/events`  | -    | SSE stream: a ping each time the booking changes |
+| GET    | `/api/group-bookings/{bookingId}/audit-trail` | -    | Full history (joins/leaves/finalization), oldest first |
 
 Authenticated requests send `Authorization: Bearer <token>`, a JWT (HS256) returned by
 register/login. Its secret and expiration are configured via
@@ -162,7 +169,7 @@ into by this work - branches are merged in by hand, in order:
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
-`ui-carousels`
+`ui-carousels` → `audit-trail`
 
 ## Simplifications and next steps
 
@@ -194,6 +201,11 @@ Documented deliberately, not accidentally missed:
   frontend's `tripPhotoUrls` generates a deterministic picsum.photos set per trip id
   (same trip always gets the same photos) so the carousels have something to show;
   there's no real photo library or upload flow wired up.
+- **The audit trail has no replay/backfill path.** It's built purely from events
+  consumed going forward; if `audit_event` were ever dropped or a booking existed
+  before this feature shipped, its earlier history is gone rather than reconstructible
+  from Kafka (the topics aren't retained indefinitely, and there's no snapshot to
+  rebuild from). A production version would need either long topic retention plus a
+  rebuild job, or to treat `audit_event` as the durable store from day one.
 - **Further bonus ideas from the original brainstorm** not built here: waitlists once a
-  group is full, referral/invite discounts, multi-currency pricing, an
-  event-sourced audit trail for group history.
+  group is full, referral/invite discounts, multi-currency pricing.
