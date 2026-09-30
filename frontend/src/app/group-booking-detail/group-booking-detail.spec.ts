@@ -102,6 +102,51 @@ describe('GroupBookingDetail', () => {
     expect(compiled.querySelector('.leave')).toBeFalsy();
   });
 
+  it('shows a waitlist CTA when the group is full, and joins the waitlist on click', () => {
+    const fixture = TestBed.createComponent(GroupBookingDetail);
+    fixture.detectChanges();
+    flushBookingRefresh({ ...sampleBooking(), participantCount: 10 });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('This group is full.');
+    (compiled.querySelector('.waitlist-join button') as HTMLButtonElement).click();
+
+    const waitlistReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/waitlist`);
+    expect(waitlistReq.request.method).toBe('POST');
+    waitlistReq.flush({
+      ...sampleBooking(),
+      participantCount: 10,
+      waitlist: [{ id: 'w1', customerName: 'Alice', joinedAt: '2027-04-02T00:00:00Z' }],
+      myWaitlistEntryId: 'w1',
+    });
+    fixture.detectChanges();
+
+    expect(compiled.textContent).toContain("You're #1 on the waitlist");
+  });
+
+  it('leaves the waitlist on click', () => {
+    const fixture = TestBed.createComponent(GroupBookingDetail);
+    fixture.detectChanges();
+    flushBookingRefresh({
+      ...sampleBooking(),
+      participantCount: 10,
+      waitlist: [{ id: 'w1', customerName: 'Alice', joinedAt: '2027-04-02T00:00:00Z' }],
+      myWaitlistEntryId: 'w1',
+    });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    (compiled.querySelector('.waitlisted .leave') as HTMLButtonElement).click();
+
+    const leaveWaitlistReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/waitlist/me`);
+    expect(leaveWaitlistReq.request.method).toBe('DELETE');
+    leaveWaitlistReq.flush({ ...sampleBooking(), participantCount: 10, waitlist: [], myWaitlistEntryId: null });
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.waitlisted')).toBeFalsy();
+  });
+
   it('shows the audit trail as a history timeline, newest first', () => {
     const fixture = TestBed.createComponent(GroupBookingDetail);
     fixture.detectChanges();
@@ -139,6 +184,8 @@ describe('GroupBookingDetail', () => {
         { id: 'p2', customerName: 'Bob', joinedAt: '2027-04-01T00:00:00Z' },
       ],
       myParticipantId: null,
+      waitlist: [],
+      myWaitlistEntryId: null,
     };
   }
 });

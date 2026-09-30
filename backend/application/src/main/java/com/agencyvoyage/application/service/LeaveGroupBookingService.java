@@ -5,6 +5,7 @@ import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
+import com.agencyvoyage.application.port.out.event.ParticipantJoinedEvent;
 import com.agencyvoyage.application.port.out.event.ParticipantLeftEvent;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.Participant;
@@ -12,6 +13,7 @@ import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class LeaveGroupBookingService implements LeaveGroupBookingUseCase {
 
@@ -38,7 +40,7 @@ public final class LeaveGroupBookingService implements LeaveGroupBookingUseCase 
                 .findFirst()
                 .orElseThrow(() -> new ParticipantNotInBookingException(booking.id(), command.userId()));
 
-        booking.leave(command.userId(), now);
+        Optional<Participant> promoted = booking.leave(command.userId(), now);
 
         groupBookingRepository.save(booking);
 
@@ -49,6 +51,19 @@ public final class LeaveGroupBookingService implements LeaveGroupBookingUseCase 
                 booking.currentParticipantCount(),
                 booking.currentPricePerSeat(),
                 now));
+
+        // Reuses the regular join event: from every consumer's point of view (notifications,
+        // audit trail, the SSE bridge) a waitlist promotion is indistinguishable from an
+        // ordinary join - it fills the same seat the same way, just triggered by a departure
+        // instead of a fresh request.
+        promoted.ifPresent(newParticipant -> eventPublisher.publishParticipantJoined(new ParticipantJoinedEvent(
+                booking.id(),
+                booking.tripId(),
+                newParticipant.id(),
+                newParticipant.customerName(),
+                booking.currentParticipantCount(),
+                booking.currentPricePerSeat(),
+                now)));
 
         return booking;
     }

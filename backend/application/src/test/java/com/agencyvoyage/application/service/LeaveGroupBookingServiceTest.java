@@ -3,6 +3,7 @@ package com.agencyvoyage.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,11 +11,14 @@ import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
+import com.agencyvoyage.application.port.out.event.ParticipantJoinedEvent;
 import com.agencyvoyage.application.port.out.event.ParticipantLeftEvent;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
+import com.agencyvoyage.domain.booking.WaitlistEntry;
+import com.agencyvoyage.domain.booking.WaitlistEntryId;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
@@ -66,6 +70,22 @@ class LeaveGroupBookingServiceTest {
         assertThat(result.currentParticipantCount()).isEqualTo(1);
         verify(groupBookingRepository).save(booking);
         verify(eventPublisher).publishParticipantLeft(any(ParticipantLeftEvent.class));
+        verify(eventPublisher, never()).publishParticipantJoined(any());
+    }
+
+    @Test
+    void promotesTheWaitlistedEntryAndPublishesAJoinedEventForThem() {
+        GroupBooking booking = openFullBookingWithOneWaitlisted();
+        UserId aliceId = booking.participants().get(0).userId();
+        when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
+
+        GroupBooking result = service.leaveGroupBooking(new LeaveGroupBookingCommand(booking.id(), aliceId));
+
+        assertThat(result.currentParticipantCount()).isEqualTo(1);
+        assertThat(result.participants()).extracting(Participant::customerName).containsExactly("Bob");
+        assertThat(result.waitlist()).isEmpty();
+        verify(eventPublisher).publishParticipantLeft(any(ParticipantLeftEvent.class));
+        verify(eventPublisher).publishParticipantJoined(any(ParticipantJoinedEvent.class));
     }
 
     @Test
@@ -103,5 +123,23 @@ class LeaveGroupBookingServiceTest {
                 schedule);
         Participant creator = new Participant(ParticipantId.newId(), UserId.newId(), "Alice", NOW);
         return GroupBooking.open(GroupBookingId.newId(), trip, creator, NOW);
+    }
+
+    private static GroupBooking openFullBookingWithOneWaitlisted() {
+        PricingSchedule schedule = PricingSchedule.of(new BigDecimal("1000"), List.of(), 1);
+        Trip trip = new Trip(
+                TripId.newId(),
+                "Bali",
+                "10 days in Bali",
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 20),
+                1,
+                1,
+                NOW.plus(1, ChronoUnit.DAYS),
+                schedule);
+        Participant creator = new Participant(ParticipantId.newId(), UserId.newId(), "Alice", NOW);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, creator, NOW);
+        booking.joinWaitlist(new WaitlistEntry(WaitlistEntryId.newId(), UserId.newId(), "Bob", NOW), NOW);
+        return booking;
     }
 }

@@ -11,8 +11,12 @@ import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.JoinWaitlistCommand;
+import com.agencyvoyage.application.port.in.JoinWaitlistUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.LeaveWaitlistCommand;
+import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
 import com.agencyvoyage.application.port.out.AuditEntry;
 import com.agencyvoyage.application.port.out.AuditEventType;
 import com.agencyvoyage.domain.booking.GroupBooking;
@@ -20,6 +24,10 @@ import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
+import com.agencyvoyage.domain.booking.WaitlistEntry;
+import com.agencyvoyage.domain.booking.WaitlistEntryId;
+import com.agencyvoyage.domain.exception.AlreadyWaitlistedException;
+import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.GroupFullException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
@@ -72,6 +80,12 @@ class GroupBookingControllerTest {
 
     @MockitoBean
     private GetAuditTrailUseCase getAuditTrailUseCase;
+
+    @MockitoBean
+    private JoinWaitlistUseCase joinWaitlistUseCase;
+
+    @MockitoBean
+    private LeaveWaitlistUseCase leaveWaitlistUseCase;
 
     /**
      * Not used directly by this controller, but JwtAuthenticationFilter is a servlet
@@ -173,6 +187,60 @@ class GroupBookingControllerTest {
                 .isEqualTo("PARTICIPANT_JOINED");
     }
 
+    @Test
+    void joinWaitlistReturns200WithTheBookingAndMyWaitlistEntryId() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        GroupBooking booking = fullBookingWithOneWaitlisted(bookingId, ALICE.id());
+        when(joinWaitlistUseCase.joinWaitlist(any(JoinWaitlistCommand.class))).thenReturn(booking);
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/waitlist")
+                        .with(asAlice()))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.myWaitlistEntryId")
+                .isNotNull();
+    }
+
+    @Test
+    void returns409WhenJoiningTheWaitlistOfABookingThatIsNotFull() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        when(joinWaitlistUseCase.joinWaitlist(any(JoinWaitlistCommand.class)))
+                .thenThrow(new BookingNotFullException(bookingId));
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/waitlist")
+                        .with(asAlice()))
+                .hasStatus(409);
+    }
+
+    @Test
+    void returns409WhenAlreadyOnTheWaitlist() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        when(joinWaitlistUseCase.joinWaitlist(any(JoinWaitlistCommand.class)))
+                .thenThrow(new AlreadyWaitlistedException(bookingId, ALICE.id()));
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/waitlist")
+                        .with(asAlice()))
+                .hasStatus(409);
+    }
+
+    @Test
+    void leaveWaitlistReturnsTheUpdatedBookingAsJson() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        GroupBooking booking = booking(bookingId, ALICE.id());
+        when(leaveWaitlistUseCase.leaveWaitlist(any(LeaveWaitlistCommand.class))).thenReturn(booking);
+
+        assertThat(mvc.delete()
+                        .uri("/api/group-bookings/" + bookingId + "/waitlist/me")
+                        .with(asAlice()))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.status")
+                .isEqualTo("OPEN");
+    }
+
     private static org.springframework.test.web.servlet.request.RequestPostProcessor asAlice() {
         Authentication authentication = new UsernamePasswordAuthenticationToken(ALICE, null, List.of());
         return authentication(authentication);
@@ -199,6 +267,34 @@ class GroupBookingControllerTest {
                 trip.bookingDeadline(),
                 schedule,
                 GroupBookingStatus.OPEN,
-                List.of(creator));
+                List.of(creator),
+                List.of());
+    }
+
+    private static GroupBooking fullBookingWithOneWaitlisted(GroupBookingId id, UserId waitlistedUserId) {
+        PricingSchedule schedule = PricingSchedule.of(new BigDecimal("1000"), List.of(), 1);
+        Trip trip = new Trip(
+                TripId.newId(),
+                "Bali",
+                "desc",
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 20),
+                1,
+                1,
+                Instant.now().plus(30, ChronoUnit.DAYS),
+                schedule);
+        Participant creator = new Participant(ParticipantId.newId(), UserId.newId(), "Bob", Instant.now());
+        WaitlistEntry entry =
+                new WaitlistEntry(WaitlistEntryId.newId(), waitlistedUserId, "Alice", Instant.now());
+        return GroupBooking.reconstitute(
+                id,
+                trip.id(),
+                trip.minParticipants(),
+                trip.maxParticipants(),
+                trip.bookingDeadline(),
+                schedule,
+                GroupBookingStatus.OPEN,
+                List.of(creator),
+                List.of(entry));
     }
 }

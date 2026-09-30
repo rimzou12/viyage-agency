@@ -7,6 +7,8 @@ import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
+import com.agencyvoyage.domain.booking.WaitlistEntry;
+import com.agencyvoyage.domain.booking.WaitlistEntryId;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
@@ -77,6 +79,37 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     }
 
     @Test
+    void persistsAWaitlistEntryAddedAfterTheInitialSave() {
+        Trip trip = fullTrip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
+        adapter.save(booking);
+
+        booking.joinWaitlist(new WaitlistEntry(WaitlistEntryId.newId(), UserId.newId(), "Bob", now), now);
+        adapter.save(booking);
+
+        GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
+        assertThat(reloaded.waitlist()).extracting(WaitlistEntry::customerName).containsExactly("Bob");
+    }
+
+    @Test
+    void persistsAWaitlistPromotionWhenAParticipantLeaves() {
+        Trip trip = fullTrip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        Participant alice = participant("Alice", now);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, alice, now);
+        booking.joinWaitlist(new WaitlistEntry(WaitlistEntryId.newId(), UserId.newId(), "Bob", now), now);
+        adapter.save(booking);
+
+        booking.leave(alice.userId(), now);
+        adapter.save(booking);
+
+        GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
+        assertThat(reloaded.participants()).extracting(Participant::customerName).containsExactly("Bob");
+        assertThat(reloaded.waitlist()).isEmpty();
+    }
+
+    @Test
     void findsOpenBookingsWithDeadlineAtOrBeforeTheGivenInstant() {
         Instant deadline = Instant.now().plus(1, ChronoUnit.SECONDS);
         Trip trip = trip(deadline);
@@ -115,6 +148,20 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
                 LocalDate.of(2027, 6, 20),
                 2,
                 10,
+                deadline,
+                schedule);
+    }
+
+    private static Trip fullTrip(Instant deadline) {
+        PricingSchedule schedule = PricingSchedule.of(new BigDecimal("1000"), List.of(), 1);
+        return new Trip(
+                TripId.newId(),
+                "Bali",
+                "10 days in Bali",
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 20),
+                1,
+                1,
                 deadline,
                 schedule);
     }

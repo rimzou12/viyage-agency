@@ -23,6 +23,15 @@ export class GroupBookingService {
     return this.http.delete<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}/participants/me`);
   }
 
+  /** Only valid once the booking is full - use joinGroupBooking() while there's still room. */
+  joinWaitlist(bookingId: string): Observable<GroupBooking> {
+    return this.http.post<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}/waitlist`, {});
+  }
+
+  leaveWaitlist(bookingId: string): Observable<GroupBooking> {
+    return this.http.delete<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}/waitlist/me`);
+  }
+
   getGroupBooking(bookingId: string): Observable<GroupBooking> {
     return this.http.get<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}`);
   }

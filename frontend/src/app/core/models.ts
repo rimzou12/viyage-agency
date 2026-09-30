@@ -24,6 +24,12 @@ export interface Participant {
   joinedAt: string;
 }
 
+export interface WaitlistEntry {
+  id: string;
+  customerName: string;
+  joinedAt: string;
+}
+
 export interface GroupBooking {
   id: string;
   tripId: string;
@@ -37,6 +43,10 @@ export interface GroupBooking {
   participants: Participant[];
   /** Which participant (if any) belongs to the caller, computed from the auth token. */
   myParticipantId: string | null;
+  /** Oldest-waiting first. */
+  waitlist: WaitlistEntry[];
+  /** Which waitlist entry (if any) belongs to the caller, computed from the auth token. */
+  myWaitlistEntryId: string | null;
 }
 
 export type AuditEventType = 'PARTICIPANT_JOINED' | 'PARTICIPANT_LEFT' | 'FINALIZED';
