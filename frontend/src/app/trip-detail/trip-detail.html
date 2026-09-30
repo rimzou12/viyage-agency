@@ -1,0 +1,46 @@
+<main class="page">
+  <a class="back" routerLink="/">&larr; All trips</a>
+
+  @if (loading()) {
+    <p>Loading trip...</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (trip(); as t) {
+    <h1>{{ t.destination }}</h1>
+    <p class="dates">{{ t.departureDate | date: 'longDate' }} &ndash; {{ t.returnDate | date: 'longDate' }}</p>
+    <p class="description">{{ t.description }}</p>
+
+    <section class="pricing">
+      <h2>Group pricing</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Group size</th>
+            <th>Price per seat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1&ndash;{{ (t.priceTiers[0]?.minParticipants ?? t.maxParticipants + 1) - 1 }}</td>
+            <td>{{ t.basePrice | currency }}</td>
+          </tr>
+          @for (tier of t.priceTiers; track tier.minParticipants; let i = $index) {
+            <tr>
+              <td>
+                {{ tier.minParticipants }}+
+                @if (t.priceTiers[i + 1]) {
+                  (up to {{ t.priceTiers[i + 1].minParticipants - 1 }})
+                }
+              </td>
+              <td>{{ tier.pricePerSeat | currency }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <p class="fine-print">
+        Group of {{ t.minParticipants }}&ndash;{{ t.maxParticipants }} travelers. Booking closes
+        {{ t.bookingDeadline | date: 'medium' }}.
+      </p>
+    </section>
+  }
+</main>
