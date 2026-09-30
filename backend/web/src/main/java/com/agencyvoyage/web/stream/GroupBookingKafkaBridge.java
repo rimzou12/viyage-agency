@@ -3,6 +3,7 @@ package com.agencyvoyage.web.stream;
 import com.agencyvoyage.infrastructure.messaging.kafka.KafkaTopics;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.GroupBookingFinalizedMessage;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantJoinedMessage;
+import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantLeftMessage;
 import java.util.Objects;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,11 @@ public class GroupBookingKafkaBridge {
     @KafkaListener(topics = KafkaTopics.PARTICIPANT_JOINED, groupId = "agency-voyage-sse-bridge")
     public void onParticipantJoined(ParticipantJoinedMessage message) {
         broadcaster.broadcast(message.bookingId(), "participant-joined");
+    }
+
+    @KafkaListener(topics = KafkaTopics.PARTICIPANT_LEFT, groupId = "agency-voyage-sse-bridge")
+    public void onParticipantLeft(ParticipantLeftMessage message) {
+        broadcaster.broadcast(message.bookingId(), "participant-left");
     }
 
     @KafkaListener(topics = KafkaTopics.FINALIZED, groupId = "agency-voyage-sse-bridge")

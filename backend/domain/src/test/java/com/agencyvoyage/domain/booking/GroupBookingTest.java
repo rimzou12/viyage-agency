@@ -8,6 +8,7 @@ import com.agencyvoyage.domain.exception.BookingClosedException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
@@ -80,6 +81,51 @@ class GroupBookingTest {
         booking.finalizeBooking(NOW.plus(2, ChronoUnit.DAYS));
 
         assertThatThrownBy(() -> booking.join(participant("Bob", NOW), NOW.plus(2, ChronoUnit.DAYS)))
+                .isInstanceOf(BookingClosedException.class);
+    }
+
+    @Test
+    void leavingRemovesTheParticipantAndReducesThePrice() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        Participant bob = participant("Bob", NOW);
+        booking.join(bob, NOW);
+        assertThat(booking.currentPricePerSeat()).isEqualByComparingTo("800");
+
+        booking.leave(bob.id(), NOW);
+
+        assertThat(booking.currentParticipantCount()).isEqualTo(1);
+        assertThat(booking.participants()).extracting(Participant::customerName).containsExactly("Alice");
+        assertThat(booking.currentPricePerSeat()).isEqualByComparingTo("1000");
+    }
+
+    @Test
+    void cannotLeaveWithAnUnknownParticipantId() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+
+        assertThatThrownBy(() -> booking.leave(ParticipantId.newId(), NOW))
+                .isInstanceOf(ParticipantNotInBookingException.class);
+    }
+
+    @Test
+    void cannotLeaveAfterTheDeadline() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        Participant creatorId = booking.participants().get(0);
+
+        assertThatThrownBy(() -> booking.leave(creatorId.id(), NOW.plus(2, ChronoUnit.DAYS)))
+                .isInstanceOf(DeadlineExpiredException.class);
+    }
+
+    @Test
+    void cannotLeaveAClosedBooking() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        Participant creator = booking.participants().get(0);
+        booking.finalizeBooking(NOW.plus(2, ChronoUnit.DAYS));
+
+        assertThatThrownBy(() -> booking.leave(creator.id(), NOW.plus(2, ChronoUnit.DAYS)))
                 .isInstanceOf(BookingClosedException.class);
     }
 

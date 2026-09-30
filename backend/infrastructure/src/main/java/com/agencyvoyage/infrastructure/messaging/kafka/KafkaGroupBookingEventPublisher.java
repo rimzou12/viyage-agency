@@ -3,8 +3,10 @@ package com.agencyvoyage.infrastructure.messaging.kafka;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.event.GroupBookingFinalizedEvent;
 import com.agencyvoyage.application.port.out.event.ParticipantJoinedEvent;
+import com.agencyvoyage.application.port.out.event.ParticipantLeftEvent;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.GroupBookingFinalizedMessage;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantJoinedMessage;
+import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantLeftMessage;
 import java.util.Objects;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -35,6 +37,19 @@ public class KafkaGroupBookingEventPublisher implements GroupBookingEventPublish
                 event.pricePerSeat(),
                 event.occurredAt());
         kafkaTemplate.send(KafkaTopics.PARTICIPANT_JOINED, key, message);
+    }
+
+    @Override
+    public void publishParticipantLeft(ParticipantLeftEvent event) {
+        String key = event.bookingId().toString();
+        ParticipantLeftMessage message = new ParticipantLeftMessage(
+                event.bookingId().toString(),
+                event.tripId().toString(),
+                event.participantId().toString(),
+                event.participantCount(),
+                event.pricePerSeat(),
+                event.occurredAt());
+        kafkaTemplate.send(KafkaTopics.PARTICIPANT_LEFT, key, message);
     }
 
     @Override

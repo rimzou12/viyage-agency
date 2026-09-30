@@ -29,6 +29,11 @@ export class GroupBookingDetail {
   protected readonly error = signal<string | null>(null);
   protected readonly joining = signal(false);
   protected readonly joinError = signal<string | null>(null);
+  protected readonly leaving = signal(false);
+  protected readonly leaveError = signal<string | null>(null);
+  protected readonly myParticipantId = signal<string | null>(
+    this.groupBookingService.myParticipantId(this.bookingId),
+  );
 
   constructor() {
     // Live updates arrive over SSE (near-instant); the periodic timer is just a
@@ -63,10 +68,35 @@ export class GroupBookingDetail {
       next: (booking) => {
         this.booking.set(booking);
         this.joining.set(false);
+        if (booking.myParticipantId) {
+          this.groupBookingService.rememberMyParticipantId(this.bookingId, booking.myParticipantId);
+          this.myParticipantId.set(booking.myParticipantId);
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.joining.set(false);
         this.joinError.set(apiErrorMessage(err, 'Could not join this group.'));
+      },
+    });
+  }
+
+  protected leave(): void {
+    const participantId = this.myParticipantId();
+    if (!participantId) {
+      return;
+    }
+    this.leaving.set(true);
+    this.leaveError.set(null);
+    this.groupBookingService.leaveGroupBooking(this.bookingId, participantId).subscribe({
+      next: (booking) => {
+        this.booking.set(booking);
+        this.leaving.set(false);
+        this.groupBookingService.forgetMyParticipantId(this.bookingId);
+        this.myParticipantId.set(null);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.leaving.set(false);
+        this.leaveError.set(apiErrorMessage(err, 'Could not leave this group.'));
       },
     });
   }

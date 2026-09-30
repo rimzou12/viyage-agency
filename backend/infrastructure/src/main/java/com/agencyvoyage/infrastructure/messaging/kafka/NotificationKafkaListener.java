@@ -2,6 +2,7 @@ package com.agencyvoyage.infrastructure.messaging.kafka;
 
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.GroupBookingFinalizedMessage;
 import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantJoinedMessage;
+import com.agencyvoyage.infrastructure.messaging.kafka.dto.ParticipantLeftMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,6 +27,15 @@ public class NotificationKafkaListener {
                 message.participantCount(),
                 message.pricePerSeat(),
                 message.customerName());
+    }
+
+    @KafkaListener(topics = KafkaTopics.PARTICIPANT_LEFT, groupId = "agency-voyage-notifications")
+    public void onParticipantLeft(ParticipantLeftMessage message) {
+        log.info(
+                "Group booking {} now has {} participant(s) at {} per seat (someone just left)",
+                message.bookingId(),
+                message.participantCount(),
+                message.pricePerSeat());
     }
 
     @KafkaListener(topics = KafkaTopics.FINALIZED, groupId = "agency-voyage-notifications")

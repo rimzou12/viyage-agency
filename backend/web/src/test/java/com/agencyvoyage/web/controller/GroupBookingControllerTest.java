@@ -9,11 +9,14 @@ import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
+import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
@@ -40,6 +43,9 @@ class GroupBookingControllerTest {
 
     @MockitoBean
     private JoinGroupBookingUseCase joinGroupBookingUseCase;
+
+    @MockitoBean
+    private LeaveGroupBookingUseCase leaveGroupBookingUseCase;
 
     @MockitoBean
     private GetGroupBookingUseCase getGroupBookingUseCase;
@@ -88,6 +94,31 @@ class GroupBookingControllerTest {
                 .bodyJson()
                 .extractingPath("$.status")
                 .isEqualTo("OPEN");
+    }
+
+    @Test
+    void leaveReturnsTheUpdatedBookingAsJson() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        GroupBooking booking = booking(bookingId);
+        when(leaveGroupBookingUseCase.leaveGroupBooking(any(LeaveGroupBookingCommand.class)))
+                .thenReturn(booking);
+
+        assertThat(mvc.delete().uri("/api/group-bookings/" + bookingId + "/participants/" + ParticipantId.newId()))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.status")
+                .isEqualTo("OPEN");
+    }
+
+    @Test
+    void returns409WhenLeavingWithAParticipantNotInTheBooking() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        ParticipantId participantId = ParticipantId.newId();
+        when(leaveGroupBookingUseCase.leaveGroupBooking(any(LeaveGroupBookingCommand.class)))
+                .thenThrow(new ParticipantNotInBookingException(bookingId, participantId));
+
+        assertThat(mvc.delete().uri("/api/group-bookings/" + bookingId + "/participants/" + participantId))
+                .hasStatus(409);
     }
 
     private static GroupBooking booking(GroupBookingId id) {

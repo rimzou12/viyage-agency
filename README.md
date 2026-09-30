@@ -101,6 +101,7 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/trips/{tripId}`                     | Get one trip                          |
 | POST   | `/api/trips/{tripId}/group-bookings`      | Start a group booking (`{"customerName"}`) |
 | POST   | `/api/group-bookings/{bookingId}/participants` | Join a group booking (`{"customerName"}`) |
+| DELETE | `/api/group-bookings/{bookingId}/participants/{participantId}` | Leave a group booking |
 | GET    | `/api/group-bookings/{bookingId}`         | Get a group booking's current state   |
 | GET    | `/api/group-bookings/{bookingId}/events`  | SSE stream: a ping each time the booking changes |
 
@@ -151,7 +152,7 @@ into by this work - branches are merged in by hand, in order:
 
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
-`ci-pipelines` → `live-price-updates`
+`ci-pipelines` → `live-price-updates` → `leave-group-booking`
 
 ## Simplifications and next steps
 
@@ -171,7 +172,11 @@ Documented deliberately, not accidentally missed:
   poll as a backstop in case an SSE connection drops.
 - **Trips are seed data, not admin-managed.** `TripCatalogSeeder` inserts a handful of
   sample trips on first startup; there's no create/edit flow for the catalog itself.
-- **No auth.** Anyone can create or join a group with any name they type in.
+- **No auth.** Anyone can create or join a group with any name they type in. "Which
+  participant is me" (so the UI can show a Leave button) is tracked client-side in
+  `localStorage`, keyed by booking id, set the moment a create/join response tells the
+  browser its own new participant id - not a session or identity, just enough for one
+  browser tab to recognize its own entry.
 - **Further bonus ideas from the original brainstorm** not built here: waitlists once a
   group is full, referral/invite discounts, multi-currency pricing, an
   event-sourced audit trail for group history.

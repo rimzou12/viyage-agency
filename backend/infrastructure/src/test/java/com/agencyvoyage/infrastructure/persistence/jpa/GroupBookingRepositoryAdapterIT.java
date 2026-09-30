@@ -62,6 +62,26 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     }
 
     @Test
+    void persistsAParticipantLeavingAfterTheInitialSave() {
+        Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        ParticipantId bobId = ParticipantId.newId();
+        GroupBooking booking = GroupBooking.open(
+                GroupBookingId.newId(), trip,
+                new Participant(ParticipantId.newId(), "Alice", now), now);
+        booking.join(new Participant(bobId, "Bob", now), now);
+        adapter.save(booking);
+
+        booking.leave(bobId, now);
+        adapter.save(booking);
+
+        GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
+        assertThat(reloaded.currentParticipantCount()).isEqualTo(1);
+        assertThat(reloaded.participants()).extracting(Participant::customerName).containsExactly("Alice");
+        assertThat(reloaded.currentPricePerSeat()).isEqualByComparingTo("1000");
+    }
+
+    @Test
     void findsOpenBookingsWithDeadlineAtOrBeforeTheGivenInstant() {
         Instant deadline = Instant.now().plus(1, ChronoUnit.SECONDS);
         Trip trip = trip(deadline);

@@ -29,7 +29,17 @@
         <p class="hint">{{ seatsToGo }} more {{ seatsToGo === 1 ? 'person' : 'people' }} needed to unlock the next price drop.</p>
       }
 
-      @if (seatsRemaining(b) > 0) {
+      @if (myParticipantId()) {
+        <section class="mine">
+          <p>You're in this group.</p>
+          <button type="button" class="leave" [disabled]="leaving()" (click)="leave()">
+            {{ leaving() ? 'Leaving...' : 'Leave this group' }}
+          </button>
+          @if (leaveError()) {
+            <p class="error">{{ leaveError() }}</p>
+          }
+        </section>
+      } @else if (seatsRemaining(b) > 0) {
         <section class="join">
           <h2>Join this group</h2>
           <form (submit)="$event.preventDefault(); join(nameInput.value); nameInput.value = ''">
@@ -51,7 +61,12 @@
       <h2>Who's in</h2>
       <ul>
         @for (participant of b.participants; track participant.id) {
-          <li>{{ participant.customerName }}</li>
+          <li>
+            {{ participant.customerName }}
+            @if (participant.id === myParticipantId()) {
+              <span class="you">you</span>
+            }
+          </li>
         }
       </ul>
     </section>

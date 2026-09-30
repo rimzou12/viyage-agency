@@ -5,6 +5,7 @@ import com.agencyvoyage.application.port.in.FinalizeGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetTripUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
@@ -13,6 +14,7 @@ import com.agencyvoyage.application.service.CreateGroupBookingService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
 import com.agencyvoyage.application.service.GetGroupBookingService;
 import com.agencyvoyage.application.service.JoinGroupBookingService;
+import com.agencyvoyage.application.service.LeaveGroupBookingService;
 import com.agencyvoyage.application.service.TripQueryService;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +62,12 @@ public class UseCaseWiringConfig {
     public JoinGroupBookingUseCase joinGroupBookingUseCase(
             GroupBookingRepository groupBookingRepository, GroupBookingEventPublisher eventPublisher, Clock clock) {
         return new JoinGroupBookingService(groupBookingRepository, eventPublisher, clock);
+    }
+
+    @Bean
+    public LeaveGroupBookingUseCase leaveGroupBookingUseCase(
+            GroupBookingRepository groupBookingRepository, GroupBookingEventPublisher eventPublisher, Clock clock) {
+        return new LeaveGroupBookingService(groupBookingRepository, eventPublisher, clock);
     }
 
     @Bean

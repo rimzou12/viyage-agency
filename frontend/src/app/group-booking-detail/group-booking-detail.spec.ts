@@ -1,3 +1,4 @@
+import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -13,6 +14,7 @@ import { GroupBooking } from '../core/models';
  * streamEvents() would throw in this environment. The fallback poll (also driven by
  * GroupBookingDetail) already exercises the HTTP fetch path these tests care about.
  */
+@Injectable()
 class TestGroupBookingService extends GroupBookingService {
   override streamEvents(): Observable<void> {
     return EMPTY;
@@ -71,6 +73,33 @@ describe('GroupBookingDetail', () => {
     expect(compiled.textContent).toContain('3 / 10');
   });
 
+  it('shows a Leave button once you have joined, and removes you on click', () => {
+    const fixture = TestBed.createComponent(GroupBookingDetail);
+    fixture.detectChanges();
+    httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1`).flush(sampleBooking());
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const input = compiled.querySelector('.join input') as HTMLInputElement;
+    input.value = 'Carol';
+    input.dispatchEvent(new Event('input'));
+    (compiled.querySelector('.join form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    const joinReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants`);
+    joinReq.flush({ ...sampleBooking(), participantCount: 3, myParticipantId: 'p3' });
+    fixture.detectChanges();
+
+    const leaveButton = compiled.querySelector('.leave') as HTMLButtonElement;
+    expect(leaveButton).toBeTruthy();
+    leaveButton.click();
+
+    const leaveReq = httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants/p3`);
+    expect(leaveReq.request.method).toBe('DELETE');
+    leaveReq.flush({ ...sampleBooking(), participantCount: 2, myParticipantId: null });
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.leave')).toBeFalsy();
+  });
+
   function sampleBooking(): GroupBooking {
     return {
       id: 'booking-1',
@@ -86,6 +115,7 @@ describe('GroupBookingDetail', () => {
         { id: 'p1', customerName: 'Alice', joinedAt: '2027-04-01T00:00:00Z' },
         { id: 'p2', customerName: 'Bob', joinedAt: '2027-04-01T00:00:00Z' },
       ],
+      myParticipantId: null,
     };
   }
 });

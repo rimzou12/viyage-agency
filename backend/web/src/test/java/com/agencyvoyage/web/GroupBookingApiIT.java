@@ -19,6 +19,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -79,6 +80,37 @@ class GroupBookingApiIT extends AbstractApiIT {
 
         ConsumerRecord<String, String> event = pollUntilRecordForBooking(created.id());
         assertThat(event.value()).contains(created.id());
+    }
+
+    @Test
+    void leavingRemovesTheParticipantAndDropsThePriceBackDown() {
+        TripResponse[] trips = rest.getForObject(baseUrl() + "/api/trips", TripResponse[].class);
+        TripResponse trip = trips[0];
+
+        GroupBookingResponse created = rest.postForObject(
+                baseUrl() + "/api/trips/" + trip.id() + "/group-bookings",
+                new CreateGroupBookingRequest("Alice"),
+                GroupBookingResponse.class);
+        GroupBookingResponse afterBobJoined = rest.postForObject(
+                baseUrl() + "/api/group-bookings/" + created.id() + "/participants",
+                new JoinGroupBookingRequest("Bob"),
+                GroupBookingResponse.class);
+        assertThat(afterBobJoined.myParticipantId()).isNotNull();
+
+        GroupBookingResponse afterBobLeft = rest.exchange(
+                        baseUrl() + "/api/group-bookings/" + created.id() + "/participants/"
+                                + afterBobJoined.myParticipantId(),
+                        HttpMethod.DELETE,
+                        null,
+                        GroupBookingResponse.class)
+                .getBody();
+
+        assertThat(afterBobLeft.participantCount()).isEqualTo(1);
+        assertThat(afterBobLeft.currentPricePerSeat()).isEqualByComparingTo(trip.basePrice());
+
+        GroupBookingResponse reloaded =
+                rest.getForObject(baseUrl() + "/api/group-bookings/" + created.id(), GroupBookingResponse.class);
+        assertThat(reloaded.participantCount()).isEqualTo(1);
     }
 
     @Test

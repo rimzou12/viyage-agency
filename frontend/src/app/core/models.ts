@@ -35,4 +35,6 @@ export interface GroupBooking {
   deadline: string;
   priceTiers: PriceTier[];
   participants: Participant[];
+  /** Present only on the response to a create/join call - which participant is "me". */
+  myParticipantId: string | null;
 }
