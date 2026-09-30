@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -6,11 +6,13 @@ import { TripService } from '../core/trip.service';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
 import { Trip } from '../core/models';
+import { tripPhotoUrls } from '../core/photos';
+import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel],
   templateUrl: './trip-detail.html',
   styleUrl: './trip-detail.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +29,10 @@ export class TripDetail {
   protected readonly error = signal<string | null>(null);
   protected readonly creating = signal(false);
   protected readonly createError = signal<string | null>(null);
+  protected readonly photos = computed(() => {
+    const trip = this.trip();
+    return trip ? tripPhotoUrls(trip.id, 6) : [];
+  });
 
   constructor() {
     const tripId = this.route.snapshot.paramMap.get('id')!;

@@ -6,6 +6,8 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (trip(); as t) {
+    <app-image-carousel class="hero-photo" [images]="photos()" [autoplayMs]="5000" />
+
     <h1>{{ t.destination }}</h1>
     <p class="dates">{{ t.departureDate | date: 'longDate' }} &ndash; {{ t.returnDate | date: 'longDate' }}</p>
     <p class="description">{{ t.description }}</p>

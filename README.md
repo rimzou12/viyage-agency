@@ -161,7 +161,8 @@ into by this work - branches are merged in by hand, in order:
 
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
-`ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication`
+`ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
+`ui-carousels`
 
 ## Simplifications and next steps
 
@@ -189,6 +190,10 @@ Documented deliberately, not accidentally missed:
   layers. "Which participant is me" is now computed server-side on every response
   (`GroupBookingResponse.myParticipantId`) from the caller's authenticated `UserId`,
   replacing the earlier `localStorage`-based heuristic.
+- **Trip photos are stand-in placeholders, not real destination photography.** The
+  frontend's `tripPhotoUrls` generates a deterministic picsum.photos set per trip id
+  (same trip always gets the same photos) so the carousels have something to show;
+  there's no real photo library or upload flow wired up.
 - **Further bonus ideas from the original brainstorm** not built here: waitlists once a
   group is full, referral/invite discounts, multi-currency pricing, an
   event-sourced audit trail for group history.
