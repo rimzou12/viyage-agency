@@ -3,11 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { interval, startWith, switchMap } from 'rxjs';
+import { interval, merge, startWith, switchMap } from 'rxjs';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { GroupBooking } from '../core/models';
 
-const POLL_INTERVAL_MS = 4000;
+/** Backstop only - live updates normally arrive over SSE well before this fires. */
+const FALLBACK_POLL_MS = 20000;
 
 @Component({
   selector: 'app-group-booking-detail',
@@ -30,9 +31,13 @@ export class GroupBookingDetail {
   protected readonly joinError = signal<string | null>(null);
 
   constructor() {
-    interval(POLL_INTERVAL_MS)
+    // Live updates arrive over SSE (near-instant); the periodic timer is just a
+    // backstop in case a connection is dropped and the browser hasn't reconnected yet.
+    merge(
+      interval(FALLBACK_POLL_MS).pipe(startWith(0)),
+      this.groupBookingService.streamEvents(this.bookingId),
+    )
       .pipe(
-        startWith(0),
         switchMap(() => this.groupBookingService.getGroupBooking(this.bookingId)),
         takeUntilDestroyed(this.destroyRef),
       )

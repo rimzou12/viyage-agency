@@ -2,9 +2,22 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { EMPTY, Observable } from 'rxjs';
 import { GroupBookingDetail } from './group-booking-detail';
+import { GroupBookingService } from '../core/group-booking.service';
 import { API_BASE_URL } from '../core/api-config';
 import { GroupBooking } from '../core/models';
+
+/**
+ * jsdom (the test DOM) doesn't implement EventSource, so the real service's
+ * streamEvents() would throw in this environment. The fallback poll (also driven by
+ * GroupBookingDetail) already exercises the HTTP fetch path these tests care about.
+ */
+class TestGroupBookingService extends GroupBookingService {
+  override streamEvents(): Observable<void> {
+    return EMPTY;
+  }
+}
 
 describe('GroupBookingDetail', () => {
   let httpMock: HttpTestingController;
@@ -16,6 +29,7 @@ describe('GroupBookingDetail', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        { provide: GroupBookingService, useClass: TestGroupBookingService },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap({ id: 'booking-1' }) } },
