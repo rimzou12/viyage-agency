@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: agency-voyage
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/agencyvoyage
+    username: agencyvoyage
+    password: agencyvoyage
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: agency-voyage
+      auto-offset-reset: earliest
+
+server:
+  port: 8080
+
+agency-voyage:
+  group-booking:
+    finalization-check-interval-ms: 30000
