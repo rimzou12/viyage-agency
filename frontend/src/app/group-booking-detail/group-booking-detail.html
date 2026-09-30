@@ -55,8 +55,33 @@
             <p class="error">{{ joinError() }}</p>
           }
         </section>
+      } @else if (myWaitlistEntryId()) {
+        <section class="mine waitlisted">
+          <p class="full">This group is full.</p>
+          <p>You're #{{ myWaitlistPosition() }} on the waitlist - you'll get a seat automatically if one opens up.</p>
+          <button type="button" class="leave" [disabled]="leavingWaitlist()" (click)="leaveWaitlist()">
+            {{ leavingWaitlist() ? 'Leaving...' : 'Leave the waitlist' }}
+          </button>
+          @if (leaveWaitlistError()) {
+            <p class="error">{{ leaveWaitlistError() }}</p>
+          }
+        </section>
       } @else {
-        <p class="full">This group is full.</p>
+        <section class="join waitlist-join">
+          <p class="full">This group is full.</p>
+          @if (auth.isLoggedIn()) {
+            <button type="button" [disabled]="joiningWaitlist()" (click)="joinWaitlist()">
+              {{ joiningWaitlist() ? 'Joining waitlist...' : 'Join the waitlist' }}
+            </button>
+          } @else {
+            <a class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
+              Log in to join the waitlist
+            </a>
+          }
+          @if (joinWaitlistError()) {
+            <p class="error">{{ joinWaitlistError() }}</p>
+          }
+        </section>
       }
     }
 
@@ -73,6 +98,23 @@
         }
       </ul>
     </section>
+
+    @if (b.waitlist.length > 0) {
+      <section class="waitlist">
+        <h2>Waitlist</h2>
+        <ol>
+          @for (entry of b.waitlist; track entry.id; let i = $index) {
+            <li>
+              <span class="position">{{ i + 1 }}</span>
+              {{ entry.customerName }}
+              @if (entry.id === myWaitlistEntryId()) {
+                <span class="you">you</span>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+    }
 
     @if (auditTrail().length > 0) {
       <section class="history">

@@ -62,6 +62,10 @@ table - the group booking's full history, queryable via
 booking page. Being built from the same events the other two consumers already read is
 the point: the audit trail costs nothing extra to keep in sync, and a slow or failing
 consumer on one topic never blocks the others, since each has its own consumer group.
+When a departure promotes someone off the waitlist, the promotion itself publishes a
+plain `ParticipantJoinedEvent` (not a separate event/topic) - to every existing
+consumer it's indistinguishable from an ordinary join, so notifications, the audit
+trail, and the live SSE update all pick it up for free.
 
 ## Business rules
 
@@ -71,6 +75,9 @@ Reframing the kata's original group-purchase stories for trips:
   the trip's booking deadline hasn't passed and the group isn't full.
 - The price per seat drops as the group crosses each trip's price-tier thresholds -
   visible live to everyone already in the group.
+- Once a group is full, new customers can join its waitlist instead. If a participant
+  leaves before the deadline, the longest-waiting person on the waitlist is
+  automatically promoted into the freed seat.
 - Once a group's deadline passes: if it reached the trip's minimum participants, the
   trip is confirmed at whatever price tier the final count landed on; otherwise it's
   cancelled.
@@ -109,8 +116,10 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/trips/{tripId}`                     | -    | Get one trip                          |
 | POST   | `/api/trips/{tripId}/group-bookings`      | required | Start a group booking as the caller |
 | POST   | `/api/group-bookings/{bookingId}/participants` | required | Join a group booking as the caller |
-| DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller |
-| GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId` if a valid token is sent) |
+| DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller (auto-promotes the next waitlisted person, if any) |
+| POST   | `/api/group-bookings/{bookingId}/waitlist` | required | Join the waitlist - only once the group is full |
+| DELETE | `/api/group-bookings/{bookingId}/waitlist/me` | required | Leave the waitlist without waiting for a seat |
+| GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId`/`myWaitlistEntryId` if a valid token is sent) |
 | GET    | `/api/group-bookings/{bookingId}/events`  | -    | SSE stream: a ping each time the booking changes |
 | GET    | `/api/group-bookings/{bookingId}/audit-trail` | -    | Full history (joins/leaves/finalization), oldest first |
 
@@ -169,7 +178,7 @@ into by this work - branches are merged in by hand, in order:
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
-`ui-carousels` → `audit-trail`
+`ui-carousels` → `audit-trail` → `waitlist`
 
 ## Simplifications and next steps
 
@@ -207,5 +216,9 @@ Documented deliberately, not accidentally missed:
   from Kafka (the topics aren't retained indefinitely, and there's no snapshot to
   rebuild from). A production version would need either long topic retention plus a
   rebuild job, or to treat `audit_event` as the durable store from day one.
-- **Further bonus ideas from the original brainstorm** not built here: waitlists once a
-  group is full, referral/invite discounts, multi-currency pricing.
+- **The waitlist has no expiry or reservation window.** A promoted waitlist entry
+  becomes a full participant immediately and permanently - there's no "you have 10
+  minutes to confirm your seat" step, so a promoted user who never comes back still
+  occupies the seat until someone finalizes or they leave themselves.
+- **Further bonus ideas from the original brainstorm** not built here: referral/invite
+  discounts, multi-currency pricing.

@@ -2,6 +2,7 @@ package com.agencyvoyage.web.dto;
 
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.Participant;
+import com.agencyvoyage.domain.booking.WaitlistEntry;
 import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,7 +19,9 @@ public record GroupBookingResponse(
         Instant deadline,
         List<PriceTierResponse> priceTiers,
         List<ParticipantResponse> participants,
-        String myParticipantId) {
+        String myParticipantId,
+        List<WaitlistEntryResponse> waitlist,
+        String myWaitlistEntryId) {
 
     public static GroupBookingResponse from(GroupBooking booking) {
         return from(booking, null);
@@ -33,6 +36,8 @@ public record GroupBookingResponse(
     public static GroupBookingResponse from(GroupBooking booking, UserId currentUserId) {
         List<ParticipantResponse> participants =
                 booking.participants().stream().map(ParticipantResponse::from).toList();
+        List<WaitlistEntryResponse> waitlist =
+                booking.waitlist().stream().map(WaitlistEntryResponse::from).toList();
         List<PriceTierResponse> priceTiers = booking.pricingSchedule().tiers().stream()
                 .map(tier -> new PriceTierResponse(tier.minParticipants(), tier.pricePerSeat()))
                 .toList();
@@ -41,6 +46,14 @@ public record GroupBookingResponse(
                 : booking.participants().stream()
                         .filter(p -> p.userId().equals(currentUserId))
                         .map(Participant::id)
+                        .map(Object::toString)
+                        .findFirst()
+                        .orElse(null);
+        String myWaitlistEntryId = currentUserId == null
+                ? null
+                : booking.waitlist().stream()
+                        .filter(w -> w.userId().equals(currentUserId))
+                        .map(WaitlistEntry::id)
                         .map(Object::toString)
                         .findFirst()
                         .orElse(null);
@@ -55,6 +68,8 @@ public record GroupBookingResponse(
                 booking.deadline(),
                 priceTiers,
                 participants,
-                myParticipantId);
+                myParticipantId,
+                waitlist,
+                myWaitlistEntryId);
     }
 }

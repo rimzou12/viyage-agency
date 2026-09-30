@@ -55,6 +55,10 @@ public class GroupBookingJpaEntity {
     @OrderBy("joinedAt ASC")
     private List<ParticipantJpaEntity> participants = new ArrayList<>();
 
+    @OneToMany(mappedBy = "groupBooking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("joinedAt ASC")
+    private List<WaitlistEntryJpaEntity> waitlist = new ArrayList<>();
+
     protected GroupBookingJpaEntity() {
         // JPA
     }
@@ -68,7 +72,8 @@ public class GroupBookingJpaEntity {
             Instant deadline,
             BigDecimal basePrice,
             List<PriceTierEmbeddable> priceTiers,
-            List<ParticipantJpaEntity> participants) {
+            List<ParticipantJpaEntity> participants,
+            List<WaitlistEntryJpaEntity> waitlist) {
         this.id = id;
         this.tripId = tripId;
         this.status = status;
@@ -78,6 +83,7 @@ public class GroupBookingJpaEntity {
         this.basePrice = basePrice;
         this.priceTiers = new ArrayList<>(priceTiers);
         replaceParticipants(participants);
+        replaceWaitlist(waitlist);
     }
 
     /** Sets the initial participant list on a brand-new entity, keeping the bidirectional association consistent. */
@@ -85,6 +91,14 @@ public class GroupBookingJpaEntity {
         this.participants.clear();
         for (ParticipantJpaEntity participant : newParticipants) {
             addParticipant(participant);
+        }
+    }
+
+    /** Sets the initial waitlist on a brand-new entity, keeping the bidirectional association consistent. */
+    public final void replaceWaitlist(List<WaitlistEntryJpaEntity> newWaitlist) {
+        this.waitlist.clear();
+        for (WaitlistEntryJpaEntity entry : newWaitlist) {
+            addWaitlistEntry(entry);
         }
     }
 
@@ -97,6 +111,12 @@ public class GroupBookingJpaEntity {
     public void addParticipant(ParticipantJpaEntity participant) {
         participant.setGroupBooking(this);
         this.participants.add(participant);
+    }
+
+    /** Appends one waitlist entry to an already-managed entity - same reasoning as {@link #addParticipant}. */
+    public void addWaitlistEntry(WaitlistEntryJpaEntity entry) {
+        entry.setGroupBooking(this);
+        this.waitlist.add(entry);
     }
 
     public UUID getId() {
@@ -137,5 +157,9 @@ public class GroupBookingJpaEntity {
 
     public List<ParticipantJpaEntity> getParticipants() {
         return participants;
+    }
+
+    public List<WaitlistEntryJpaEntity> getWaitlist() {
+        return waitlist;
     }
 }

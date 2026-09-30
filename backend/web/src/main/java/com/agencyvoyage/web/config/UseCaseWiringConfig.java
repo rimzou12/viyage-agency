@@ -6,7 +6,9 @@ import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetTripUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.JoinWaitlistUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.in.LoginUseCase;
 import com.agencyvoyage.application.port.in.RegisterUserUseCase;
@@ -22,7 +24,9 @@ import com.agencyvoyage.application.service.FinalizeGroupBookingService;
 import com.agencyvoyage.application.service.GetAuditTrailService;
 import com.agencyvoyage.application.service.GetGroupBookingService;
 import com.agencyvoyage.application.service.JoinGroupBookingService;
+import com.agencyvoyage.application.service.JoinWaitlistService;
 import com.agencyvoyage.application.service.LeaveGroupBookingService;
+import com.agencyvoyage.application.service.LeaveWaitlistService;
 import com.agencyvoyage.application.service.LoginService;
 import com.agencyvoyage.application.service.RegisterUserService;
 import com.agencyvoyage.application.service.TripQueryService;
@@ -88,6 +92,16 @@ public class UseCaseWiringConfig {
     @Bean
     public GetAuditTrailUseCase getAuditTrailUseCase(AuditTrailRepository auditTrailRepository) {
         return new GetAuditTrailService(auditTrailRepository);
+    }
+
+    @Bean
+    public JoinWaitlistUseCase joinWaitlistUseCase(GroupBookingRepository groupBookingRepository, Clock clock) {
+        return new JoinWaitlistService(groupBookingRepository, clock);
+    }
+
+    @Bean
+    public LeaveWaitlistUseCase leaveWaitlistUseCase(GroupBookingRepository groupBookingRepository) {
+        return new LeaveWaitlistService(groupBookingRepository);
     }
 
     @Bean

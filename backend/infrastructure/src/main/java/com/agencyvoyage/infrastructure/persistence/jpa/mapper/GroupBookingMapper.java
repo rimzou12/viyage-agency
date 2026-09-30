@@ -5,6 +5,8 @@ import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
+import com.agencyvoyage.domain.booking.WaitlistEntry;
+import com.agencyvoyage.domain.booking.WaitlistEntryId;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.TripId;
@@ -12,6 +14,7 @@ import com.agencyvoyage.domain.user.UserId;
 import com.agencyvoyage.infrastructure.persistence.jpa.entity.GroupBookingJpaEntity;
 import com.agencyvoyage.infrastructure.persistence.jpa.entity.ParticipantJpaEntity;
 import com.agencyvoyage.infrastructure.persistence.jpa.entity.PriceTierEmbeddable;
+import com.agencyvoyage.infrastructure.persistence.jpa.entity.WaitlistEntryJpaEntity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +33,9 @@ public final class GroupBookingMapper {
         List<ParticipantJpaEntity> participants = booking.participants().stream()
                 .map(p -> new ParticipantJpaEntity(p.id().value(), p.userId().value(), p.customerName(), p.joinedAt()))
                 .toList();
+        List<WaitlistEntryJpaEntity> waitlist = booking.waitlist().stream()
+                .map(w -> new WaitlistEntryJpaEntity(w.id().value(), w.userId().value(), w.customerName(), w.joinedAt()))
+                .toList();
         return new GroupBookingJpaEntity(
                 booking.id().value(),
                 booking.tripId().value(),
@@ -39,7 +45,8 @@ public final class GroupBookingMapper {
                 booking.deadline(),
                 booking.pricingSchedule().basePrice(),
                 tiers,
-                participants);
+                participants,
+                waitlist);
     }
 
     /**
@@ -72,6 +79,23 @@ public final class GroupBookingMapper {
                         participant.joinedAt()));
             }
         }
+
+        Set<UUID> stillWaitlisted = booking.waitlist().stream()
+                .map(w -> w.id().value())
+                .collect(Collectors.toSet());
+        entity.getWaitlist().removeIf(existing -> !stillWaitlisted.contains(existing.getId()));
+
+        Set<UUID> waitlistAlreadyPersisted = new HashSet<>();
+        for (WaitlistEntryJpaEntity existing : entity.getWaitlist()) {
+            waitlistAlreadyPersisted.add(existing.getId());
+        }
+
+        for (WaitlistEntry entry : booking.waitlist()) {
+            if (!waitlistAlreadyPersisted.contains(entry.id().value())) {
+                entity.addWaitlistEntry(new WaitlistEntryJpaEntity(
+                        entry.id().value(), entry.userId().value(), entry.customerName(), entry.joinedAt()));
+            }
+        }
     }
 
     public static GroupBooking toDomain(GroupBookingJpaEntity entity) {
@@ -83,6 +107,10 @@ public final class GroupBookingMapper {
                 .map(p -> new Participant(
                         new ParticipantId(p.getId()), new UserId(p.getUserId()), p.getCustomerName(), p.getJoinedAt()))
                 .toList();
+        List<WaitlistEntry> waitlist = entity.getWaitlist().stream()
+                .map(w -> new WaitlistEntry(
+                        new WaitlistEntryId(w.getId()), new UserId(w.getUserId()), w.getCustomerName(), w.getJoinedAt()))
+                .toList();
         return GroupBooking.reconstitute(
                 new GroupBookingId(entity.getId()),
                 new TripId(entity.getTripId()),
@@ -91,6 +119,7 @@ public final class GroupBookingMapper {
                 entity.getDeadline(),
                 schedule,
                 entity.getStatus(),
-                participants);
+                participants,
+                waitlist);
     }
 }

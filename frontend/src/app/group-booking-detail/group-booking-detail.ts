@@ -34,9 +34,22 @@ export class GroupBookingDetail {
   protected readonly joinError = signal<string | null>(null);
   protected readonly leaving = signal(false);
   protected readonly leaveError = signal<string | null>(null);
+  protected readonly joiningWaitlist = signal(false);
+  protected readonly joinWaitlistError = signal<string | null>(null);
+  protected readonly leavingWaitlist = signal(false);
+  protected readonly leaveWaitlistError = signal<string | null>(null);
 
   /** The server computes this from the auth token on every response, including GET. */
   protected readonly myParticipantId = computed(() => this.booking()?.myParticipantId ?? null);
+  protected readonly myWaitlistEntryId = computed(() => this.booking()?.myWaitlistEntryId ?? null);
+  protected readonly myWaitlistPosition = computed(() => {
+    const entryId = this.myWaitlistEntryId();
+    if (!entryId) {
+      return null;
+    }
+    const index = (this.booking()?.waitlist ?? []).findIndex((entry) => entry.id === entryId);
+    return index === -1 ? null : index + 1;
+  });
 
   /** Newest first, for a history feed you read top-down. */
   protected readonly auditTrailNewestFirst = computed(() => [...this.auditTrail()].reverse());
@@ -96,6 +109,36 @@ export class GroupBookingDetail {
       error: (err: HttpErrorResponse) => {
         this.leaving.set(false);
         this.leaveError.set(apiErrorMessage(err, 'Could not leave this group.'));
+      },
+    });
+  }
+
+  protected joinWaitlist(): void {
+    this.joiningWaitlist.set(true);
+    this.joinWaitlistError.set(null);
+    this.groupBookingService.joinWaitlist(this.bookingId).subscribe({
+      next: (booking) => {
+        this.booking.set(booking);
+        this.joiningWaitlist.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.joiningWaitlist.set(false);
+        this.joinWaitlistError.set(apiErrorMessage(err, 'Could not join the waitlist.'));
+      },
+    });
+  }
+
+  protected leaveWaitlist(): void {
+    this.leavingWaitlist.set(true);
+    this.leaveWaitlistError.set(null);
+    this.groupBookingService.leaveWaitlist(this.bookingId).subscribe({
+      next: (booking) => {
+        this.booking.set(booking);
+        this.leavingWaitlist.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.leavingWaitlist.set(false);
+        this.leaveWaitlistError.set(apiErrorMessage(err, 'Could not leave the waitlist.'));
       },
     });
   }

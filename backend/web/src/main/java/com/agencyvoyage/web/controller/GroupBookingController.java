@@ -6,8 +6,12 @@ import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.JoinWaitlistCommand;
+import com.agencyvoyage.application.port.in.JoinWaitlistUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.LeaveWaitlistCommand;
+import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.trip.TripId;
@@ -33,18 +37,24 @@ public class GroupBookingController {
     private final LeaveGroupBookingUseCase leaveGroupBookingUseCase;
     private final GetGroupBookingUseCase getGroupBookingUseCase;
     private final GetAuditTrailUseCase getAuditTrailUseCase;
+    private final JoinWaitlistUseCase joinWaitlistUseCase;
+    private final LeaveWaitlistUseCase leaveWaitlistUseCase;
 
     public GroupBookingController(
             CreateGroupBookingUseCase createGroupBookingUseCase,
             JoinGroupBookingUseCase joinGroupBookingUseCase,
             LeaveGroupBookingUseCase leaveGroupBookingUseCase,
             GetGroupBookingUseCase getGroupBookingUseCase,
-            GetAuditTrailUseCase getAuditTrailUseCase) {
+            GetAuditTrailUseCase getAuditTrailUseCase,
+            JoinWaitlistUseCase joinWaitlistUseCase,
+            LeaveWaitlistUseCase leaveWaitlistUseCase) {
         this.createGroupBookingUseCase = Objects.requireNonNull(createGroupBookingUseCase);
         this.joinGroupBookingUseCase = Objects.requireNonNull(joinGroupBookingUseCase);
         this.leaveGroupBookingUseCase = Objects.requireNonNull(leaveGroupBookingUseCase);
         this.getGroupBookingUseCase = Objects.requireNonNull(getGroupBookingUseCase);
         this.getAuditTrailUseCase = Objects.requireNonNull(getAuditTrailUseCase);
+        this.joinWaitlistUseCase = Objects.requireNonNull(joinWaitlistUseCase);
+        this.leaveWaitlistUseCase = Objects.requireNonNull(leaveWaitlistUseCase);
     }
 
     @PostMapping("/api/trips/{tripId}/group-bookings")
@@ -77,6 +87,22 @@ public class GroupBookingController {
             @PathVariable String bookingId, @AuthenticationPrincipal User currentUser) {
         GroupBooking booking = getGroupBookingUseCase.getGroupBooking(GroupBookingId.of(bookingId));
         return GroupBookingResponse.from(booking, currentUser == null ? null : currentUser.id());
+    }
+
+    @PostMapping("/api/group-bookings/{bookingId}/waitlist")
+    public GroupBookingResponse joinWaitlist(
+            @PathVariable String bookingId, @AuthenticationPrincipal User currentUser) {
+        GroupBooking booking = joinWaitlistUseCase.joinWaitlist(
+                new JoinWaitlistCommand(GroupBookingId.of(bookingId), currentUser));
+        return GroupBookingResponse.from(booking, currentUser.id());
+    }
+
+    @DeleteMapping("/api/group-bookings/{bookingId}/waitlist/me")
+    public GroupBookingResponse leaveWaitlist(
+            @PathVariable String bookingId, @AuthenticationPrincipal User currentUser) {
+        GroupBooking booking = leaveWaitlistUseCase.leaveWaitlist(
+                new LeaveWaitlistCommand(GroupBookingId.of(bookingId), currentUser.id()));
+        return GroupBookingResponse.from(booking, currentUser.id());
     }
 
     @GetMapping("/api/group-bookings/{bookingId}/audit-trail")

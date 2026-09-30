@@ -5,10 +5,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.agencyvoyage.domain.exception.AlreadyFinalizedException;
 import com.agencyvoyage.domain.exception.AlreadyJoinedException;
+import com.agencyvoyage.domain.exception.AlreadyWaitlistedException;
 import com.agencyvoyage.domain.exception.BookingClosedException;
+import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.NotOnWaitlistException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
@@ -20,6 +23,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class GroupBookingTest {
@@ -105,8 +109,9 @@ class GroupBookingTest {
         booking.join(bob, NOW);
         assertThat(booking.currentPricePerSeat()).isEqualByComparingTo("800");
 
-        booking.leave(bob.userId(), NOW);
+        Optional<Participant> promoted = booking.leave(bob.userId(), NOW);
 
+        assertThat(promoted).isEmpty();
         assertThat(booking.currentParticipantCount()).isEqualTo(1);
         assertThat(booking.participants()).extracting(Participant::customerName).containsExactly("Alice");
         assertThat(booking.currentPricePerSeat()).isEqualByComparingTo("1000");
@@ -140,6 +145,97 @@ class GroupBookingTest {
 
         assertThatThrownBy(() -> booking.leave(creator.userId(), NOW.plus(2, ChronoUnit.DAYS)))
                 .isInstanceOf(BookingClosedException.class);
+    }
+
+    @Test
+    void cannotJoinTheWaitlistWhileTheGroupStillHasRoom() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 2);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+
+        assertThatThrownBy(() -> booking.joinWaitlist(waitlistEntry("Bob", NOW), NOW))
+                .isInstanceOf(BookingNotFullException.class);
+    }
+
+    @Test
+    void joinsTheWaitlistOnceTheGroupIsFull() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 1);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+
+        booking.joinWaitlist(waitlistEntry("Bob", NOW), NOW);
+
+        assertThat(booking.waitlist()).extracting(WaitlistEntry::customerName).containsExactly("Bob");
+        assertThat(booking.currentParticipantCount()).isEqualTo(1);
+    }
+
+    @Test
+    void cannotJoinTheWaitlistTwiceAsTheSameUser() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 1);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        UserId bobId = UserId.newId();
+        booking.joinWaitlist(new WaitlistEntry(WaitlistEntryId.newId(), bobId, "Bob", NOW), NOW);
+
+        assertThatThrownBy(
+                        () -> booking.joinWaitlist(new WaitlistEntry(WaitlistEntryId.newId(), bobId, "Bob", NOW), NOW))
+                .isInstanceOf(AlreadyWaitlistedException.class);
+    }
+
+    @Test
+    void cannotJoinTheWaitlistIfAlreadyAParticipant() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 1);
+        Participant alice = participant("Alice", NOW);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, alice, NOW);
+
+        assertThatThrownBy(() -> booking.joinWaitlist(
+                        new WaitlistEntry(WaitlistEntryId.newId(), alice.userId(), "Alice", NOW), NOW))
+                .isInstanceOf(AlreadyJoinedException.class);
+    }
+
+    @Test
+    void leavingPromotesTheLongestWaitingEntryIntoTheFreedSeat() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 1);
+        Participant alice = participant("Alice", NOW);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, alice, NOW);
+        booking.joinWaitlist(waitlistEntry("Bob", NOW), NOW);
+        booking.joinWaitlist(waitlistEntry("Carol", NOW), NOW);
+
+        Instant promotionTime = NOW.plus(1, ChronoUnit.HOURS);
+        Optional<Participant> promoted = booking.leave(alice.userId(), promotionTime);
+
+        assertThat(promoted).isPresent();
+        assertThat(promoted.get().customerName()).isEqualTo("Bob");
+        assertThat(promoted.get().joinedAt()).isEqualTo(promotionTime);
+        assertThat(booking.participants()).extracting(Participant::customerName).containsExactly("Bob");
+        assertThat(booking.waitlist()).extracting(WaitlistEntry::customerName).containsExactly("Carol");
+    }
+
+    @Test
+    void leavingWithAnEmptyWaitlistPromotesNobody() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 2);
+        Participant alice = participant("Alice", NOW);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, alice, NOW);
+
+        assertThat(booking.leave(alice.userId(), NOW)).isEmpty();
+    }
+
+    @Test
+    void leavingTheWaitlistRemovesTheEntry() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 1);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        UserId bobId = UserId.newId();
+        booking.joinWaitlist(new WaitlistEntry(WaitlistEntryId.newId(), bobId, "Bob", NOW), NOW);
+
+        booking.leaveWaitlist(bobId);
+
+        assertThat(booking.waitlist()).isEmpty();
+    }
+
+    @Test
+    void cannotLeaveTheWaitlistWithoutBeingOnIt() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 1);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+
+        assertThatThrownBy(() -> booking.leaveWaitlist(UserId.newId()))
+                .isInstanceOf(NotOnWaitlistException.class);
     }
 
     @Test
@@ -202,5 +298,9 @@ class GroupBookingTest {
 
     private static Participant participant(String name, Instant joinedAt) {
         return new Participant(ParticipantId.newId(), UserId.newId(), name, joinedAt);
+    }
+
+    private static WaitlistEntry waitlistEntry(String name, Instant joinedAt) {
+        return new WaitlistEntry(WaitlistEntryId.newId(), UserId.newId(), name, joinedAt);
     }
 }
