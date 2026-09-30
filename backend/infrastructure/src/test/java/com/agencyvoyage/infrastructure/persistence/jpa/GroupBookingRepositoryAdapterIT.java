@@ -1,0 +1,106 @@
+package com.agencyvoyage.infrastructure.persistence.jpa;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.agencyvoyage.domain.booking.GroupBooking;
+import com.agencyvoyage.domain.booking.GroupBookingId;
+import com.agencyvoyage.domain.booking.GroupBookingStatus;
+import com.agencyvoyage.domain.booking.Participant;
+import com.agencyvoyage.domain.booking.ParticipantId;
+import com.agencyvoyage.domain.trip.PriceTier;
+import com.agencyvoyage.domain.trip.PricingSchedule;
+import com.agencyvoyage.domain.trip.Trip;
+import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.infrastructure.config.AbstractPostgresIT;
+import com.agencyvoyage.infrastructure.persistence.jpa.adapter.GroupBookingRepositoryAdapter;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
+
+    @Autowired
+    private GroupBookingRepositoryAdapter adapter;
+
+    @Test
+    void savesAndReloadsANewlyOpenedBooking() {
+        Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
+        GroupBooking booking = GroupBooking.open(
+                GroupBookingId.newId(), trip, new Participant(
+                        ParticipantId.newId(), "Alice", Instant.now()),
+                Instant.now());
+
+        adapter.save(booking);
+
+        Optional<GroupBooking> reloaded = adapter.findById(booking.id());
+        assertThat(reloaded).isPresent();
+        assertThat(reloaded.get().currentParticipantCount()).isEqualTo(1);
+        assertThat(reloaded.get().participants().get(0).customerName()).isEqualTo("Alice");
+        assertThat(reloaded.get().status()).isEqualTo(GroupBookingStatus.OPEN);
+    }
+
+    @Test
+    void persistsParticipantsAddedAfterTheInitialSave() {
+        Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        GroupBooking booking = GroupBooking.open(
+                GroupBookingId.newId(), trip,
+                new Participant(ParticipantId.newId(), "Alice", now), now);
+        adapter.save(booking);
+
+        booking.join(new Participant(ParticipantId.newId(), "Bob", now), now);
+        adapter.save(booking);
+
+        GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
+        assertThat(reloaded.currentParticipantCount()).isEqualTo(2);
+        assertThat(reloaded.currentPricePerSeat()).isEqualByComparingTo("800");
+    }
+
+    @Test
+    void findsOpenBookingsWithDeadlineAtOrBeforeTheGivenInstant() {
+        Instant deadline = Instant.now().plus(1, ChronoUnit.SECONDS);
+        Trip trip = trip(deadline);
+        Instant now = Instant.now();
+        GroupBooking booking = GroupBooking.open(
+                GroupBookingId.newId(), trip,
+                new Participant(ParticipantId.newId(), "Alice", now), now);
+        adapter.save(booking);
+
+        List<GroupBooking> due = adapter.findOpenWithDeadlineAtOrBefore(deadline.plusSeconds(1));
+
+        assertThat(due).extracting(GroupBooking::id).contains(booking.id());
+    }
+
+    @Test
+    void findByTripIdReturnsOnlyThatTripsBookings() {
+        Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        GroupBooking booking = GroupBooking.open(
+                GroupBookingId.newId(), trip,
+                new Participant(ParticipantId.newId(), "Alice", now), now);
+        adapter.save(booking);
+
+        assertThat(adapter.findByTripId(trip.id())).extracting(GroupBooking::id).containsExactly(booking.id());
+        assertThat(adapter.findByTripId(TripId.newId())).isEmpty();
+    }
+
+    private static Trip trip(Instant deadline) {
+        PricingSchedule schedule = PricingSchedule.of(
+                new BigDecimal("1000"), List.of(new PriceTier(2, new BigDecimal("800"))), 10);
+        return new Trip(
+                TripId.newId(),
+                "Bali",
+                "10 days in Bali",
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 20),
+                2,
+                10,
+                deadline,
+                schedule);
+    }
+}
