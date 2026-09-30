@@ -7,11 +7,14 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
+import com.agencyvoyage.application.port.out.AuditEntry;
+import com.agencyvoyage.application.port.out.AuditEventType;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
@@ -66,6 +69,9 @@ class GroupBookingControllerTest {
 
     @MockitoBean
     private GetGroupBookingUseCase getGroupBookingUseCase;
+
+    @MockitoBean
+    private GetAuditTrailUseCase getAuditTrailUseCase;
 
     /**
      * Not used directly by this controller, but JwtAuthenticationFilter is a servlet
@@ -151,6 +157,20 @@ class GroupBookingControllerTest {
                         .uri("/api/group-bookings/" + bookingId + "/participants/me")
                         .with(asAlice()))
                 .hasStatus(409);
+    }
+
+    @Test
+    void getAuditTrailReturnsTheStoredHistoryAsJsonWithoutRequiringAuthentication() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        AuditEntry entry = new AuditEntry(
+                bookingId, AuditEventType.PARTICIPANT_JOINED, ParticipantId.newId(), "Alice", 1, new BigDecimal("1000"), null, Instant.now());
+        when(getAuditTrailUseCase.getAuditTrail(bookingId)).thenReturn(List.of(entry));
+
+        assertThat(mvc.get().uri("/api/group-bookings/" + bookingId + "/audit-trail"))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].type")
+                .isEqualTo("PARTICIPANT_JOINED");
     }
 
     private static org.springframework.test.web.servlet.request.RequestPostProcessor asAlice() {

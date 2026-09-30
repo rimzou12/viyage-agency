@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from './api-config';
-import { GroupBooking } from './models';
+import { AuditEvent, GroupBooking } from './models';
 
 const LIVE_EVENT_NAMES = ['participant-joined', 'participant-left', 'finalized'];
 
@@ -25,6 +25,11 @@ export class GroupBookingService {
 
   getGroupBooking(bookingId: string): Observable<GroupBooking> {
     return this.http.get<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}`);
+  }
+
+  /** Oldest first. */
+  getAuditTrail(bookingId: string): Observable<AuditEvent[]> {
+    return this.http.get<AuditEvent[]>(`${API_BASE_URL}/api/group-bookings/${bookingId}/audit-trail`);
   }
 
   /**

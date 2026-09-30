@@ -3,10 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { interval, merge, startWith, switchMap } from 'rxjs';
+import { forkJoin, interval, merge, startWith, switchMap } from 'rxjs';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
-import { GroupBooking } from '../core/models';
+import { AuditEvent, GroupBooking } from '../core/models';
 
 /** Backstop only - live updates normally arrive over SSE well before this fires. */
 const FALLBACK_POLL_MS = 20000;
@@ -27,6 +27,7 @@ export class GroupBookingDetail {
   protected readonly auth = inject(AuthService);
 
   protected readonly booking = signal<GroupBooking | null>(null);
+  protected readonly auditTrail = signal<AuditEvent[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly joining = signal(false);
@@ -37,6 +38,9 @@ export class GroupBookingDetail {
   /** The server computes this from the auth token on every response, including GET. */
   protected readonly myParticipantId = computed(() => this.booking()?.myParticipantId ?? null);
 
+  /** Newest first, for a history feed you read top-down. */
+  protected readonly auditTrailNewestFirst = computed(() => [...this.auditTrail()].reverse());
+
   constructor() {
     // Live updates arrive over SSE (near-instant); the periodic timer is just a
     // backstop in case a connection is dropped and the browser hasn't reconnected yet.
@@ -45,12 +49,18 @@ export class GroupBookingDetail {
       this.groupBookingService.streamEvents(this.bookingId),
     )
       .pipe(
-        switchMap(() => this.groupBookingService.getGroupBooking(this.bookingId)),
+        switchMap(() =>
+          forkJoin({
+            booking: this.groupBookingService.getGroupBooking(this.bookingId),
+            auditTrail: this.groupBookingService.getAuditTrail(this.bookingId),
+          }),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (booking) => {
+        next: ({ booking, auditTrail }) => {
           this.booking.set(booking);
+          this.auditTrail.set(auditTrail);
           this.loading.set(false);
         },
         error: () => {
@@ -97,5 +107,18 @@ export class GroupBookingDetail {
   protected seatsUntilNextTier(booking: GroupBooking): number | null {
     const nextTier = booking.priceTiers.find((tier) => tier.minParticipants > booking.participantCount);
     return nextTier ? nextTier.minParticipants - booking.participantCount : null;
+  }
+
+  protected describeEvent(event: AuditEvent): string {
+    switch (event.type) {
+      case 'PARTICIPANT_JOINED':
+        return `${event.customerName} joined (${event.participantCount} in the group)`;
+      case 'PARTICIPANT_LEFT':
+        return `Someone left (${event.participantCount} in the group)`;
+      case 'FINALIZED':
+        return event.status === 'CONFIRMED'
+          ? `Group confirmed with ${event.participantCount} traveler${event.participantCount === 1 ? '' : 's'}`
+          : 'Group cancelled - not enough travelers joined in time';
+    }
   }
 }

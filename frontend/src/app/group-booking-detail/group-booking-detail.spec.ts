@@ -7,7 +7,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { GroupBookingDetail } from './group-booking-detail';
 import { GroupBookingService } from '../core/group-booking.service';
 import { API_BASE_URL } from '../core/api-config';
-import { GroupBooking } from '../core/models';
+import { AuditEvent, GroupBooking } from '../core/models';
 
 /**
  * jsdom (the test DOM) doesn't implement EventSource, so the real service's
@@ -53,7 +53,7 @@ describe('GroupBookingDetail', () => {
     const fixture = TestBed.createComponent(GroupBookingDetail);
     fixture.detectChanges();
 
-    httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1`).flush(sampleBooking());
+    flushBookingRefresh(sampleBooking());
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -64,7 +64,7 @@ describe('GroupBookingDetail', () => {
   it('joins the group and updates the displayed booking', () => {
     const fixture = TestBed.createComponent(GroupBookingDetail);
     fixture.detectChanges();
-    httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1`).flush(sampleBooking());
+    flushBookingRefresh(sampleBooking());
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -81,7 +81,7 @@ describe('GroupBookingDetail', () => {
   it('shows a Leave button once you have joined, and removes you on click', () => {
     const fixture = TestBed.createComponent(GroupBookingDetail);
     fixture.detectChanges();
-    httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1`).flush(sampleBooking());
+    flushBookingRefresh(sampleBooking());
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -101,6 +101,27 @@ describe('GroupBookingDetail', () => {
 
     expect(compiled.querySelector('.leave')).toBeFalsy();
   });
+
+  it('shows the audit trail as a history timeline, newest first', () => {
+    const fixture = TestBed.createComponent(GroupBookingDetail);
+    fixture.detectChanges();
+    flushBookingRefresh(sampleBooking(), [
+      { type: 'PARTICIPANT_JOINED', participantId: 'p1', customerName: 'Alice', participantCount: 1, pricePerSeat: 1000, status: null, occurredAt: '2027-04-01T00:00:00Z' },
+      { type: 'PARTICIPANT_JOINED', participantId: 'p2', customerName: 'Bob', participantCount: 2, pricePerSeat: 1000, status: null, occurredAt: '2027-04-01T00:05:00Z' },
+    ]);
+    fixture.detectChanges();
+
+    const items = (fixture.nativeElement as HTMLElement).querySelectorAll('.history li .what');
+    expect(items.length).toBe(2);
+    expect(items[0].textContent).toContain('Bob joined');
+    expect(items[1].textContent).toContain('Alice joined');
+  });
+
+  /** Flushes the paired GET .../{id} and GET .../audit-trail requests the component fires together. */
+  function flushBookingRefresh(booking: GroupBooking, auditTrail: AuditEvent[] = []): void {
+    httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1`).flush(booking);
+    httpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/audit-trail`).flush(auditTrail);
+  }
 
   function sampleBooking(): GroupBooking {
     return {

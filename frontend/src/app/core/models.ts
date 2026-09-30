@@ -39,6 +39,19 @@ export interface GroupBooking {
   myParticipantId: string | null;
 }
 
+export type AuditEventType = 'PARTICIPANT_JOINED' | 'PARTICIPANT_LEFT' | 'FINALIZED';
+
+export interface AuditEvent {
+  type: AuditEventType;
+  participantId: string | null;
+  customerName: string | null;
+  participantCount: number;
+  pricePerSeat: number;
+  /** Only set for a FINALIZED entry. */
+  status: GroupBookingStatus | null;
+  occurredAt: string;
+}
+
 export interface User {
   id: string;
   email: string;
