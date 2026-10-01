@@ -89,8 +89,11 @@ public class UseCaseWiringConfig {
 
     @Bean
     public JoinGroupBookingUseCase joinGroupBookingUseCase(
-            GroupBookingRepository groupBookingRepository, GroupBookingEventPublisher eventPublisher, Clock clock) {
-        return new JoinGroupBookingService(groupBookingRepository, eventPublisher, clock);
+            GroupBookingRepository groupBookingRepository,
+            GroupBookingEventPublisher eventPublisher,
+            EmailSender emailSender,
+            Clock clock) {
+        return new JoinGroupBookingService(groupBookingRepository, eventPublisher, emailSender, clock);
     }
 
     @Bean

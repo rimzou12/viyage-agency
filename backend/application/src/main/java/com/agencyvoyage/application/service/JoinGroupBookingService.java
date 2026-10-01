@@ -3,6 +3,7 @@ package com.agencyvoyage.application.service;
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
 import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
+import com.agencyvoyage.application.port.out.EmailSender;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
 import com.agencyvoyage.application.port.out.event.ParticipantJoinedEvent;
@@ -17,13 +18,18 @@ public final class JoinGroupBookingService implements JoinGroupBookingUseCase {
 
     private final GroupBookingRepository groupBookingRepository;
     private final GroupBookingEventPublisher eventPublisher;
+    private final EmailSender emailSender;
     private final Clock clock;
 
     public JoinGroupBookingService(
-            GroupBookingRepository groupBookingRepository, GroupBookingEventPublisher eventPublisher, Clock clock) {
+            GroupBookingRepository groupBookingRepository,
+            GroupBookingEventPublisher eventPublisher,
+            EmailSender emailSender,
+            Clock clock) {
         this.groupBookingRepository =
                 Objects.requireNonNull(groupBookingRepository, "groupBookingRepository must not be null");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher must not be null");
+        this.emailSender = Objects.requireNonNull(emailSender, "emailSender must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -51,6 +57,13 @@ public final class JoinGroupBookingService implements JoinGroupBookingUseCase {
                 booking.currentParticipantCount(),
                 booking.currentPricePerSeat(),
                 now));
+
+        emailSender.sendGroupBookingJoined(
+                command.actingUser().email(),
+                command.actingUser().displayName(),
+                booking.id(),
+                booking.currentParticipantCount(),
+                booking.currentPricePerSeat());
 
         return booking;
     }
