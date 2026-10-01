@@ -7,10 +7,13 @@ import com.agencyvoyage.domain.exception.AlreadyFinalizedException;
 import com.agencyvoyage.domain.exception.AlreadyJoinedException;
 import com.agencyvoyage.domain.exception.AlreadyWaitlistedException;
 import com.agencyvoyage.domain.exception.BookingClosedException;
+import com.agencyvoyage.domain.exception.BookingNotConfirmedException;
 import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.HotelReservationAlreadyRequestedException;
+import com.agencyvoyage.domain.exception.HotelReservationNotPendingException;
 import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.exception.NotOnWaitlistException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
@@ -312,6 +315,62 @@ class GroupBookingTest {
     }
 
     @Test
+    void cannotRequestAHotelReservationBeforeTheBookingIsConfirmed() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+
+        assertThatThrownBy(() -> booking.requestHotelReservation("REF-1", NOW))
+                .isInstanceOf(BookingNotConfirmedException.class);
+    }
+
+    @Test
+    void requestingAHotelReservationMarksItPending() {
+        GroupBooking booking = confirmedBooking();
+
+        booking.requestHotelReservation("REF-1", NOW);
+
+        assertThat(booking.hotelReservationStatus()).isEqualTo(HotelReservationStatus.PENDING);
+        assertThat(booking.hotelReservationReference()).isEqualTo("REF-1");
+    }
+
+    @Test
+    void cannotRequestAHotelReservationTwice() {
+        GroupBooking booking = confirmedBooking();
+        booking.requestHotelReservation("REF-1", NOW);
+
+        assertThatThrownBy(() -> booking.requestHotelReservation("REF-2", NOW))
+                .isInstanceOf(HotelReservationAlreadyRequestedException.class);
+    }
+
+    @Test
+    void confirmingAPendingHotelReservationMarksItConfirmed() {
+        GroupBooking booking = confirmedBooking();
+        booking.requestHotelReservation("REF-1", NOW);
+
+        booking.confirmHotelReservation(NOW);
+
+        assertThat(booking.hotelReservationStatus()).isEqualTo(HotelReservationStatus.CONFIRMED);
+    }
+
+    @Test
+    void cannotConfirmAHotelReservationThatWasNeverRequested() {
+        GroupBooking booking = confirmedBooking();
+
+        assertThatThrownBy(() -> booking.confirmHotelReservation(NOW))
+                .isInstanceOf(HotelReservationNotPendingException.class);
+    }
+
+    @Test
+    void cannotConfirmAHotelReservationTwice() {
+        GroupBooking booking = confirmedBooking();
+        booking.requestHotelReservation("REF-1", NOW);
+        booking.confirmHotelReservation(NOW);
+
+        assertThatThrownBy(() -> booking.confirmHotelReservation(NOW))
+                .isInstanceOf(HotelReservationNotPendingException.class);
+    }
+
+    @Test
     void finalizeConfirmsWhenMinimumParticipationIsReached() {
         Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 2, 5);
         GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
@@ -375,5 +434,12 @@ class GroupBookingTest {
 
     private static WaitlistEntry waitlistEntry(String name, Instant joinedAt) {
         return new WaitlistEntry(WaitlistEntryId.newId(), UserId.newId(), name, joinedAt);
+    }
+
+    private static GroupBooking confirmedBooking() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        booking.finalizeBooking(NOW.plus(2, ChronoUnit.DAYS));
+        return booking;
     }
 }

@@ -51,7 +51,9 @@ public final class GroupBookingMapper {
                 booking.pricingSchedule().basePrice(),
                 tiers,
                 participants,
-                waitlist);
+                waitlist,
+                booking.hotelReservationStatus(),
+                booking.hotelReservationReference());
     }
 
     /**
@@ -64,6 +66,8 @@ public final class GroupBookingMapper {
      */
     public static void updateEntity(GroupBookingJpaEntity entity, GroupBooking booking) {
         entity.setStatus(booking.status());
+        entity.setHotelReservationStatus(booking.hotelReservationStatus());
+        entity.setHotelReservationReference(booking.hotelReservationReference());
 
         Set<UUID> stillPresent = booking.participants().stream()
                 .map(p -> p.id().value())
@@ -130,6 +134,8 @@ public final class GroupBookingMapper {
                 schedule,
                 entity.getStatus(),
                 participants,
-                waitlist);
+                waitlist,
+                entity.getHotelReservationStatus(),
+                entity.getHotelReservationReference());
     }
 }

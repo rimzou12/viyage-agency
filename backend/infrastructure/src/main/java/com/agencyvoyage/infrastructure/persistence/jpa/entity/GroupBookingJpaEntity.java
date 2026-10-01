@@ -1,6 +1,7 @@
 package com.agencyvoyage.infrastructure.persistence.jpa.entity;
 
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
+import com.agencyvoyage.domain.booking.HotelReservationStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -59,6 +60,13 @@ public class GroupBookingJpaEntity {
     @OrderBy("joinedAt ASC")
     private List<WaitlistEntryJpaEntity> waitlist = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "hotel_reservation_status", nullable = false, length = 20)
+    private HotelReservationStatus hotelReservationStatus;
+
+    @Column(name = "hotel_reservation_reference")
+    private String hotelReservationReference;
+
     protected GroupBookingJpaEntity() {
         // JPA
     }
@@ -73,7 +81,9 @@ public class GroupBookingJpaEntity {
             BigDecimal basePrice,
             List<PriceTierEmbeddable> priceTiers,
             List<ParticipantJpaEntity> participants,
-            List<WaitlistEntryJpaEntity> waitlist) {
+            List<WaitlistEntryJpaEntity> waitlist,
+            HotelReservationStatus hotelReservationStatus,
+            String hotelReservationReference) {
         this.id = id;
         this.tripId = tripId;
         this.status = status;
@@ -84,6 +94,8 @@ public class GroupBookingJpaEntity {
         this.priceTiers = new ArrayList<>(priceTiers);
         replaceParticipants(participants);
         replaceWaitlist(waitlist);
+        this.hotelReservationStatus = hotelReservationStatus;
+        this.hotelReservationReference = hotelReservationReference;
     }
 
     /** Sets the initial participant list on a brand-new entity, keeping the bidirectional association consistent. */
@@ -161,5 +173,21 @@ public class GroupBookingJpaEntity {
 
     public List<WaitlistEntryJpaEntity> getWaitlist() {
         return waitlist;
+    }
+
+    public HotelReservationStatus getHotelReservationStatus() {
+        return hotelReservationStatus;
+    }
+
+    public void setHotelReservationStatus(HotelReservationStatus hotelReservationStatus) {
+        this.hotelReservationStatus = hotelReservationStatus;
+    }
+
+    public String getHotelReservationReference() {
+        return hotelReservationReference;
+    }
+
+    public void setHotelReservationReference(String hotelReservationReference) {
+        this.hotelReservationReference = hotelReservationReference;
     }
 }

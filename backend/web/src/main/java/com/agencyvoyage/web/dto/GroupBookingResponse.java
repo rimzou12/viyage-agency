@@ -23,7 +23,9 @@ public record GroupBookingResponse(
         String myParticipantId,
         List<WaitlistEntryResponse> waitlist,
         String myWaitlistEntryId,
-        BigDecimal myPricePerSeat) {
+        BigDecimal myPricePerSeat,
+        String hotelReservationStatus,
+        String hotelReservationReference) {
 
     public static GroupBookingResponse from(GroupBooking booking) {
         return from(booking, null);
@@ -73,6 +75,8 @@ public record GroupBookingResponse(
                 myParticipantId == null ? null : myParticipantId.toString(),
                 waitlist,
                 myWaitlistEntryId,
-                myPricePerSeat);
+                myPricePerSeat,
+                booking.hotelReservationStatus().name(),
+                booking.hotelReservationReference());
     }
 }

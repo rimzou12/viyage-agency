@@ -1,5 +1,7 @@
 package com.agencyvoyage.web.controller;
 
+import com.agencyvoyage.application.port.in.ConfirmHotelReservationCommand;
+import com.agencyvoyage.application.port.in.ConfirmHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.CreateGroupBookingCommand;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
@@ -12,6 +14,8 @@ import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.LeaveWaitlistCommand;
 import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
+import com.agencyvoyage.application.port.in.RequestHotelReservationCommand;
+import com.agencyvoyage.application.port.in.RequestHotelReservationUseCase;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.ParticipantId;
@@ -19,6 +23,7 @@ import com.agencyvoyage.domain.trip.TripId;
 import com.agencyvoyage.domain.user.User;
 import com.agencyvoyage.web.dto.AuditEventResponse;
 import com.agencyvoyage.web.dto.GroupBookingResponse;
+import com.agencyvoyage.web.dto.RequestHotelReservationRequest;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
@@ -28,6 +33,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +47,8 @@ public class GroupBookingController {
     private final GetAuditTrailUseCase getAuditTrailUseCase;
     private final JoinWaitlistUseCase joinWaitlistUseCase;
     private final LeaveWaitlistUseCase leaveWaitlistUseCase;
+    private final RequestHotelReservationUseCase requestHotelReservationUseCase;
+    private final ConfirmHotelReservationUseCase confirmHotelReservationUseCase;
 
     public GroupBookingController(
             CreateGroupBookingUseCase createGroupBookingUseCase,
@@ -49,7 +57,9 @@ public class GroupBookingController {
             GetGroupBookingUseCase getGroupBookingUseCase,
             GetAuditTrailUseCase getAuditTrailUseCase,
             JoinWaitlistUseCase joinWaitlistUseCase,
-            LeaveWaitlistUseCase leaveWaitlistUseCase) {
+            LeaveWaitlistUseCase leaveWaitlistUseCase,
+            RequestHotelReservationUseCase requestHotelReservationUseCase,
+            ConfirmHotelReservationUseCase confirmHotelReservationUseCase) {
         this.createGroupBookingUseCase = Objects.requireNonNull(createGroupBookingUseCase);
         this.joinGroupBookingUseCase = Objects.requireNonNull(joinGroupBookingUseCase);
         this.leaveGroupBookingUseCase = Objects.requireNonNull(leaveGroupBookingUseCase);
@@ -57,6 +67,8 @@ public class GroupBookingController {
         this.getAuditTrailUseCase = Objects.requireNonNull(getAuditTrailUseCase);
         this.joinWaitlistUseCase = Objects.requireNonNull(joinWaitlistUseCase);
         this.leaveWaitlistUseCase = Objects.requireNonNull(leaveWaitlistUseCase);
+        this.requestHotelReservationUseCase = Objects.requireNonNull(requestHotelReservationUseCase);
+        this.confirmHotelReservationUseCase = Objects.requireNonNull(confirmHotelReservationUseCase);
     }
 
     @PostMapping("/api/trips/{tripId}/group-bookings")
@@ -116,5 +128,23 @@ public class GroupBookingController {
         return getAuditTrailUseCase.getAuditTrail(GroupBookingId.of(bookingId)).stream()
                 .map(AuditEventResponse::from)
                 .toList();
+    }
+
+    @PostMapping("/api/group-bookings/{bookingId}/hotel-reservation")
+    public GroupBookingResponse requestHotelReservation(
+            @PathVariable String bookingId,
+            @RequestBody RequestHotelReservationRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        GroupBooking booking = requestHotelReservationUseCase.requestHotelReservation(
+                new RequestHotelReservationCommand(GroupBookingId.of(bookingId), request.reference()));
+        return GroupBookingResponse.from(booking, currentUser.id());
+    }
+
+    @PostMapping("/api/group-bookings/{bookingId}/hotel-reservation/confirm")
+    public GroupBookingResponse confirmHotelReservation(
+            @PathVariable String bookingId, @AuthenticationPrincipal User currentUser) {
+        GroupBooking booking = confirmHotelReservationUseCase.confirmHotelReservation(
+                new ConfirmHotelReservationCommand(GroupBookingId.of(bookingId)));
+        return GroupBookingResponse.from(booking, currentUser.id());
     }
 }

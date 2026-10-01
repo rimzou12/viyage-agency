@@ -4,10 +4,13 @@ import com.agencyvoyage.domain.exception.AlreadyFinalizedException;
 import com.agencyvoyage.domain.exception.AlreadyJoinedException;
 import com.agencyvoyage.domain.exception.AlreadyWaitlistedException;
 import com.agencyvoyage.domain.exception.BookingClosedException;
+import com.agencyvoyage.domain.exception.BookingNotConfirmedException;
 import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.HotelReservationAlreadyRequestedException;
+import com.agencyvoyage.domain.exception.HotelReservationNotPendingException;
 import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.exception.NotOnWaitlistException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
@@ -41,6 +44,8 @@ public final class GroupBooking {
     private final List<Participant> participants = new ArrayList<>();
     private final List<WaitlistEntry> waitlist = new ArrayList<>();
     private GroupBookingStatus status;
+    private HotelReservationStatus hotelReservationStatus;
+    private String hotelReservationReference;
 
     private GroupBooking(
             GroupBookingId id,
@@ -51,7 +56,9 @@ public final class GroupBooking {
             PricingSchedule pricingSchedule,
             GroupBookingStatus status,
             List<Participant> participants,
-            List<WaitlistEntry> waitlist) {
+            List<WaitlistEntry> waitlist,
+            HotelReservationStatus hotelReservationStatus,
+            String hotelReservationReference) {
         this.id = id;
         this.tripId = tripId;
         this.minParticipants = minParticipants;
@@ -61,6 +68,8 @@ public final class GroupBooking {
         this.status = status;
         this.participants.addAll(participants);
         this.waitlist.addAll(waitlist);
+        this.hotelReservationStatus = hotelReservationStatus;
+        this.hotelReservationReference = hotelReservationReference;
     }
 
     /** Opens a new group booking for {@code trip}, with {@code creator} as its first participant. */
@@ -83,7 +92,9 @@ public final class GroupBooking {
                 trip.pricingSchedule(),
                 GroupBookingStatus.OPEN,
                 List.of(),
-                List.of());
+                List.of(),
+                HotelReservationStatus.NOT_REQUESTED,
+                null);
         booking.participants.add(creator);
         return booking;
     }
@@ -98,7 +109,9 @@ public final class GroupBooking {
             PricingSchedule pricingSchedule,
             GroupBookingStatus status,
             List<Participant> participants,
-            List<WaitlistEntry> waitlist) {
+            List<WaitlistEntry> waitlist,
+            HotelReservationStatus hotelReservationStatus,
+            String hotelReservationReference) {
         return new GroupBooking(
                 id,
                 tripId,
@@ -108,7 +121,9 @@ public final class GroupBooking {
                 pricingSchedule,
                 status,
                 participants,
-                waitlist);
+                waitlist,
+                hotelReservationStatus,
+                hotelReservationReference);
     }
 
     public void join(Participant participant, Instant now) {
@@ -216,6 +231,46 @@ public final class GroupBooking {
                 ? GroupBookingStatus.CONFIRMED
                 : GroupBookingStatus.CANCELLED;
         return status;
+    }
+
+    /**
+     * Submits a hotel reservation reference for a confirmed group - only valid once
+     * the group itself is {@link GroupBookingStatus#CONFIRMED} and nobody has already
+     * requested one. Does not confirm the reservation itself; see {@link #confirmHotelReservation}.
+     */
+    public void requestHotelReservation(String reference, Instant now) {
+        Objects.requireNonNull(now, "now must not be null");
+        if (reference == null || reference.isBlank()) {
+            throw new IllegalArgumentException("reference must not be blank");
+        }
+        if (status != GroupBookingStatus.CONFIRMED) {
+            throw new BookingNotConfirmedException(id, status);
+        }
+        if (hotelReservationStatus != HotelReservationStatus.NOT_REQUESTED) {
+            throw new HotelReservationAlreadyRequestedException(id);
+        }
+        hotelReservationReference = reference;
+        hotelReservationStatus = HotelReservationStatus.PENDING;
+    }
+
+    /**
+     * Confirms a pending hotel reservation - the caller is responsible for notifying
+     * participants (e.g. by email) once this returns successfully.
+     */
+    public void confirmHotelReservation(Instant now) {
+        Objects.requireNonNull(now, "now must not be null");
+        if (hotelReservationStatus != HotelReservationStatus.PENDING) {
+            throw new HotelReservationNotPendingException(id, hotelReservationStatus);
+        }
+        hotelReservationStatus = HotelReservationStatus.CONFIRMED;
+    }
+
+    public HotelReservationStatus hotelReservationStatus() {
+        return hotelReservationStatus;
+    }
+
+    public String hotelReservationReference() {
+        return hotelReservationReference;
     }
 
     public int currentParticipantCount() {
