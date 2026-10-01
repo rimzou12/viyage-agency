@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripService } from '../core/trip.service';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
@@ -12,7 +14,7 @@ import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel],
+  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './trip-detail.html',
   styleUrl: './trip-detail.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

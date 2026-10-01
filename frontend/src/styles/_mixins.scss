@@ -1,0 +1,20 @@
+// Shared Sass mixins for the "aurora" look, usable from any component's
+// scoped stylesheet via `@use '../../styles/mixins' as *;` (component
+// styles are compiled standalone, so `@extend` across files - e.g. of the
+// `.glass-panel` class in the global styles.scss - doesn't reach here; a
+// mixin does).
+@mixin glass-panel {
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@mixin gradient-text {
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}

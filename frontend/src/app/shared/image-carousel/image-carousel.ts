@@ -8,10 +8,12 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-image-carousel',
   standalone: true,
+  imports: [MatIconModule],
   templateUrl: './image-carousel.html',
   styleUrl: './image-carousel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

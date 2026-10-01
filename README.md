@@ -5,12 +5,13 @@ seat drops in tiers as more people join. A group is confirmed only if it reaches
 trip's minimum participation before its booking deadline - otherwise it's cancelled.
 
 Built with **Spring Boot 4.1 / Java 25** (hexagonal/clean architecture) on the backend,
-**Angular 22** (standalone components, signals) on the frontend, and **Kafka** for the
-event flow between joining a group and reacting to it.
+**Angular 22** (standalone components, signals, Angular Material) on the frontend, and
+**Kafka** for the event flow between joining a group and reacting to it.
 
 ## Contents
 
 - [Architecture](#architecture)
+- [Design](#design)
 - [Business rules](#business-rules)
 - [Running it locally](#running-it-locally)
 - [API](#api)
@@ -66,6 +67,30 @@ When a departure promotes someone off the waitlist, the promotion itself publish
 plain `ParticipantJoinedEvent` (not a separate event/topic) - to every existing
 consumer it's indistinguishable from an ordinary join, so notifications, the audit
 trail, and the live SSE update all pick it up for free.
+
+## Design
+
+The frontend is built on **Angular Material** (`@angular/material`, Material 3 /
+`mat.theme()`) rather than hand-rolled components, but skinned with a custom dark
+"aurora" palette (`primary: $violet-palette`, `tertiary: $orange-palette`,
+`theme-type: dark` in `src/styles.scss`) and type pairing (Sora for headings, Inter for
+body) instead of stock Material blue/Roboto - Material supplies the system (ripple,
+elevation, motion, the M3 color/typography token system via `--mat-sys-*` CSS
+variables), the custom theme and a handful of shared primitives supply the look:
+
+- A slow-drifting animated gradient mesh behind every page (`body`'s
+  `aurora-drift` keyframe), built from the theme's own generated colors via
+  `color-mix()` so it stays in harmony with whatever palette is active.
+- A `.glass-panel`/`glass-panel` Sass mixin (`src/styles/_mixins.scss`, `@use`d via
+  `stylePreprocessorOptions.includePaths` in `angular.json`) for the frosted,
+  backdrop-blurred cards used across every page.
+- A `.gradient-text` mixin/utility for small-to-medium gradient-clipped text (price
+  figures, the nav brand) - deliberately **not** used for large bold headings, where
+  `background-clip: text` rendered a visible double-stroke artifact in testing; big
+  headlines use the `.accent-heading` utility (solid color + glow) instead.
+- Staggered entrance animations (`fade-in-up` + per-card `animation-delay`) on the trip
+  cards, a pulsing glow on an `OPEN` status badge, and glowing hover/focus states
+  throughout, all layered on top of Material's own ripple and elevation.
 
 ## Business rules
 
@@ -181,7 +206,7 @@ into by this work - branches are merged in by hand, in order:
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
-`ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts`
+`ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 
 ## Simplifications and next steps
 

@@ -1,1 +1,191 @@
-/* You can add global styles to this file, and also import other style files */
+// Theming for Angular Material with `mat.theme()`. This mixin defines the
+// --mat-sys-* CSS variables every Material component (and our own custom CSS
+// below) reads its colors and type scale from.
+// https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$orange-palette,
+        theme-type: dark,
+      ),
+      typography: (
+        plain-family: 'Inter',
+        brand-family: 'Sora',
+      ),
+      density: 0,
+    )
+  );
+}
+
+:root {
+  // A handful of custom tokens layered on top of the Material system
+  // variables above, for the parts of the "aurora" look Material doesn't
+  // have an opinion on: glow, glass surfaces and the signature gradient.
+  --glow-primary: color-mix(in srgb, var(--mat-sys-primary) 55%, transparent);
+  --glow-tertiary: color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
+  --glass-surface: color-mix(in srgb, var(--mat-sys-surface-container) 70%, transparent);
+  --glass-border: color-mix(in srgb, var(--mat-sys-outline) 45%, transparent);
+  --gradient-aurora: linear-gradient(
+    135deg,
+    var(--mat-sys-primary) 0%,
+    var(--mat-sys-tertiary) 55%,
+    var(--mat-sys-secondary) 100%
+  );
+  --ease-swift: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  color-scheme: dark;
+
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  margin: 0;
+  height: 100%;
+
+  // A slow-drifting aurora mesh behind every page - fixed so it never
+  // scrolls with the content, layered from the theme's own generated
+  // colors so it always stays in harmony with whatever palette is active.
+  background-image:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--mat-sys-primary) 38%, transparent), transparent 42%),
+    radial-gradient(
+      circle at 85% 12%,
+      color-mix(in srgb, var(--mat-sys-tertiary) 32%, transparent),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 50% 95%,
+      color-mix(in srgb, var(--mat-sys-secondary) 30%, transparent),
+      transparent 50%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: 140% 140%, 140% 140%, 140% 140%;
+  animation: aurora-drift 24s ease-in-out infinite;
+}
+
+@keyframes aurora-drift {
+  0%,
+  100% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 100%;
+  }
+  50% {
+    background-position:
+      20% 25%,
+      70% 30%,
+      40% 70%;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+.mat-headline-large,
+.mat-headline-medium {
+  font-family: 'Sora', var(--mat-sys-brand-font-family), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+::selection {
+  background: var(--mat-sys-tertiary);
+  color: var(--mat-sys-on-tertiary);
+}
+
+// Shared "glass panel" look used by cards/sections across every page.
+.glass-panel {
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--glow-primary);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Solid accent color for large headings - background-clip:text gradients read as a
+// faint double-stroke at big bold sizes in this renderer, so big headlines get a
+// plain glowing accent color instead; the gradient-clip trick stays reserved for
+// smaller text (price figures, the nav brand) where it renders perfectly clean.
+.accent-heading {
+  color: var(--mat-sys-primary);
+  text-shadow: 0 0 30px var(--glow-primary);
+}
+
+// Gradient text utility - used for price figures and the nav brand.
+.gradient-text {
+  background: var(--gradient-aurora);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+// Mild global polish for Material components so they read as "ours", not stock M3.
+.mat-mdc-card {
+  border-radius: 20px !important;
+}
+
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button {
+  border-radius: 999px !important;
+  transition:
+    transform 0.2s var(--ease-swift),
+    box-shadow 0.2s var(--ease-swift) !important;
+
+  &:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.mat-mdc-unelevated-button:not(:disabled) {
+  background-image: var(--gradient-aurora) !important;
+  box-shadow: 0 8px 24px var(--glow-primary) !important;
+}

@@ -4,6 +4,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, interval, merge, startWith, switchMap } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
 import { AuditEvent, GroupBooking, Participant } from '../core/models';
@@ -14,7 +17,7 @@ const FALLBACK_POLL_MS = 20000;
 @Component({
   selector: 'app-group-booking-detail',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './group-booking-detail.html',
   styleUrl: './group-booking-detail.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

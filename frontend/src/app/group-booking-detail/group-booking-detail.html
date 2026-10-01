@@ -2,7 +2,10 @@
   <a class="back" routerLink="/">&larr; All trips</a>
 
   @if (loading()) {
-    <p>Loading group booking...</p>
+    <div class="loading">
+      <mat-spinner diameter="36" />
+      <p>Loading group booking...</p>
+    </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (booking(); as b) {
@@ -41,7 +44,7 @@
       @if (myParticipantId()) {
         <section class="mine">
           <p>You're in this group.</p>
-          <button type="button" class="leave" [disabled]="leaving()" (click)="leave()">
+          <button mat-stroked-button type="button" class="leave" [disabled]="leaving()" (click)="leave()">
             {{ leaving() ? 'Leaving...' : 'Leave this group' }}
           </button>
           @if (leaveError()) {
@@ -54,18 +57,21 @@
           <p>Share your link - you and your friend both get $50 off when they join.</p>
           <div class="link-row">
             <input type="text" readonly [value]="inviteLink()" />
-            <button type="button" (click)="copyInviteLink()">{{ linkCopied() ? 'Copied!' : 'Copy link' }}</button>
+            <button mat-flat-button type="button" (click)="copyInviteLink()">
+              <mat-icon>{{ linkCopied() ? 'check' : 'content_copy' }}</mat-icon>
+              {{ linkCopied() ? 'Copied!' : 'Copy link' }}
+            </button>
           </div>
         </section>
       } @else if (seatsRemaining(b) > 0) {
         <section class="join">
           <h2>Join this group</h2>
           @if (auth.isLoggedIn()) {
-            <button type="button" [disabled]="joining()" (click)="join()">
+            <button mat-flat-button type="button" [disabled]="joining()" (click)="join()">
               {{ joining() ? 'Joining...' : 'Join as ' + auth.currentUser()?.displayName }}
             </button>
           } @else {
-            <a class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
+            <a mat-flat-button class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
               Log in to join
             </a>
           }
@@ -77,7 +83,7 @@
         <section class="mine waitlisted">
           <p class="full">This group is full.</p>
           <p>You're #{{ myWaitlistPosition() }} on the waitlist - you'll get a seat automatically if one opens up.</p>
-          <button type="button" class="leave" [disabled]="leavingWaitlist()" (click)="leaveWaitlist()">
+          <button mat-stroked-button type="button" class="leave" [disabled]="leavingWaitlist()" (click)="leaveWaitlist()">
             {{ leavingWaitlist() ? 'Leaving...' : 'Leave the waitlist' }}
           </button>
           @if (leaveWaitlistError()) {
@@ -88,11 +94,11 @@
         <section class="join waitlist-join">
           <p class="full">This group is full.</p>
           @if (auth.isLoggedIn()) {
-            <button type="button" [disabled]="joiningWaitlist()" (click)="joinWaitlist()">
+            <button mat-flat-button type="button" [disabled]="joiningWaitlist()" (click)="joinWaitlist()">
               {{ joiningWaitlist() ? 'Joining waitlist...' : 'Join the waitlist' }}
             </button>
           } @else {
-            <a class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
+            <a mat-flat-button class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
               Log in to join the waitlist
             </a>
           }

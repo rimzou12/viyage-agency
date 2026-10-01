@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { TripDetail } from './trip-detail';
 import { API_BASE_URL } from '../core/api-config';
 import { Trip } from '../core/models';
@@ -16,6 +17,7 @@ describe('TripDetail', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        provideNoopAnimations(),
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap({ id: 'trip-1' }) } },
