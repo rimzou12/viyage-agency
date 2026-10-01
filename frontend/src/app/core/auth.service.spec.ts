@@ -62,7 +62,7 @@ describe('AuthService', () => {
   function sampleAuthResponse(): AuthResponse {
     return {
       token: 'jwt-token',
-      user: { id: 'u1', email: 'alice@example.com', displayName: 'Alice' },
+      user: { id: 'u1', email: 'alice@example.com', displayName: 'Alice', isAdmin: false },
     };
   }
 });

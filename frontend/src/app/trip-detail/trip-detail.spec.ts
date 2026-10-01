@@ -35,6 +35,7 @@ describe('TripDetail', () => {
 
     const req = httpMock.expectOne(`${API_BASE_URL}/api/trips/trip-1`);
     req.flush(sampleTrip());
+    httpMock.expectOne(`${API_BASE_URL}/api/trips/trip-1/hotels`).flush([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;

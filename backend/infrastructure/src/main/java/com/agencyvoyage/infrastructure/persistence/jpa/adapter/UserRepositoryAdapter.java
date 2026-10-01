@@ -37,13 +37,13 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public User createAccount(String email, String hashedPassword, String displayName) {
+    public User createAccount(String email, String hashedPassword, String displayName, boolean isAdmin) {
         UserJpaEntity saved = springDataRepository.save(
-                new UserJpaEntity(UUID.randomUUID(), email, hashedPassword, displayName));
+                new UserJpaEntity(UUID.randomUUID(), email, hashedPassword, displayName, isAdmin));
         return toDomain(saved);
     }
 
     private static User toDomain(UserJpaEntity entity) {
-        return new User(new UserId(entity.getId()), entity.getEmail(), entity.getDisplayName());
+        return new User(new UserId(entity.getId()), entity.getEmail(), entity.getDisplayName(), entity.isAdmin());
     }
 }

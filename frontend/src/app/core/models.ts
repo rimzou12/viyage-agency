@@ -75,11 +75,20 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
+  isAdmin: boolean;
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface Hotel {
+  id: string;
+  tripId: string;
+  name: string;
+  description: string;
+  photoUrls: string[];
 }
 
 export interface ContactMessage {

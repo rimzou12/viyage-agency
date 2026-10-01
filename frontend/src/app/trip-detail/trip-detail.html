@@ -48,6 +48,64 @@
       </p>
     </section>
 
+    <section class="hotels">
+      <h2>Hotels</h2>
+      @if (hotels().length > 0) {
+        <ul class="hotel-list">
+          @for (hotel of hotels(); track hotel.id) {
+            <li>
+              @if (hotel.photoUrls.length > 0) {
+                <app-image-carousel class="hotel-photo" [images]="hotel.photoUrls" />
+              }
+              <h3>{{ hotel.name }}</h3>
+              <p>{{ hotel.description }}</p>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="hint">No hotels added for this trip yet.</p>
+      }
+
+      @if (auth.currentUser()?.isAdmin) {
+        <form class="add-hotel" (submit)="$event.preventDefault(); addHotel()">
+          <h3>Add a hotel</h3>
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput [ngModel]="hotelName()" name="hotelName" (ngModelChange)="hotelName.set($event)" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Description</mat-label>
+            <input
+              matInput
+              [ngModel]="hotelDescription()"
+              name="hotelDescription"
+              (ngModelChange)="hotelDescription.set($event)"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Photo URLs (one per line)</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              [ngModel]="hotelPhotoUrls()"
+              name="hotelPhotoUrls"
+              (ngModelChange)="hotelPhotoUrls.set($event)"
+            ></textarea>
+          </mat-form-field>
+          <button
+            mat-flat-button
+            type="submit"
+            [disabled]="addingHotel() || !hotelName().trim() || !hotelDescription().trim()"
+          >
+            {{ addingHotel() ? 'Adding...' : 'Add hotel' }}
+          </button>
+          @if (addHotelError()) {
+            <p class="error">{{ addHotelError() }}</p>
+          }
+        </form>
+      }
+    </section>
+
     <section class="start-group">
       <h2>Start a group</h2>
       <p>Be the first to join - others can then hop in and the price drops for everyone.</p>
