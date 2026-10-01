@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.port.in.JoinGroupBookingCommand;
+import com.agencyvoyage.application.port.out.EmailSender;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
 import com.agencyvoyage.application.port.out.event.ParticipantJoinedEvent;
@@ -48,12 +49,15 @@ class JoinGroupBookingServiceTest {
     @Mock
     private GroupBookingEventPublisher eventPublisher;
 
+    @Mock
+    private EmailSender emailSender;
+
     private JoinGroupBookingService service;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-        service = new JoinGroupBookingService(groupBookingRepository, eventPublisher, clock);
+        service = new JoinGroupBookingService(groupBookingRepository, eventPublisher, emailSender, clock);
     }
 
     @Test
@@ -67,6 +71,16 @@ class JoinGroupBookingServiceTest {
         assertThat(result.currentPricePerSeat()).isEqualByComparingTo("800");
         verify(groupBookingRepository).save(booking);
         verify(eventPublisher).publishParticipantJoined(any(ParticipantJoinedEvent.class));
+    }
+
+    @Test
+    void emailsTheJoinerOnceTheyveJoined() {
+        GroupBooking booking = openBooking(2, 5);
+        when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
+
+        service.joinGroupBooking(new JoinGroupBookingCommand(booking.id(), bob()));
+
+        verify(emailSender).sendGroupBookingJoined("bob@example.com", "Bob", booking.id(), 2, new BigDecimal("800"));
     }
 
     @Test

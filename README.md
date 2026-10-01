@@ -97,7 +97,9 @@ variables), the custom theme and a handful of shared primitives supply the look:
 Reframing the kata's original group-purchase stories for trips:
 
 - A customer can create a group booking for a trip, or join an existing one, as long as
-  the trip's booking deadline hasn't passed and the group isn't full.
+  the trip's booking deadline hasn't passed and the group isn't full. Joining sends the
+  joiner a confirmation email (participant count and price per seat at the moment they
+  joined).
 - The price per seat drops as the group crosses each trip's price-tier thresholds -
   visible live to everyone already in the group.
 - Once a group is full, new customers can join its waitlist instead. If a participant
@@ -230,7 +232,8 @@ into by this work - branches are merged in by hand, in order:
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
-→ `hotel-reservation-and-contact-admin` → `admin-hotel-catalog`
+→ `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
+`join-confirmation-email`
 
 ## Simplifications and next steps
 
@@ -284,10 +287,10 @@ Documented deliberately, not accidentally missed:
   as a simplification (the user explicitly chose "any logged-in user" over building a
   full admin inbox). Only the hotel *catalog* (`POST /api/trips/{tripId}/hotels`) is
   actually admin-gated.
-- **Hotel reservation confirmation emails are simulated, like Kafka notifications.**
-  `LoggingEmailSender` logs what would be sent (to the requester on request, to every
-  participant on confirmation) instead of calling a real provider - the same
-  simplification already made for `NotificationKafkaListener`, not wired to SES/SendGrid/etc.
+- **All transactional emails are simulated, like Kafka notifications.**
+  `LoggingEmailSender` logs what would be sent (join confirmation, hotel reservation
+  requested/confirmed) instead of calling a real provider - the same simplification
+  already made for `NotificationKafkaListener`, not wired to SES/SendGrid/etc.
 - **Hotel catalog photos are plain URLs, not an upload flow.** Same simplification as
   trip photos: an admin pastes image URLs when adding a hotel - no file upload or
   object storage.

@@ -2,6 +2,7 @@ package com.agencyvoyage.infrastructure.email;
 
 import com.agencyvoyage.application.port.out.EmailSender;
 import com.agencyvoyage.domain.booking.GroupBookingId;
+import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,22 @@ import org.springframework.stereotype.Component;
 public class LoggingEmailSender implements EmailSender {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingEmailSender.class);
+
+    @Override
+    public void sendGroupBookingJoined(
+            String toEmail,
+            String recipientName,
+            GroupBookingId bookingId,
+            int participantCount,
+            BigDecimal pricePerSeat) {
+        log.info(
+                "[EMAIL] To: {} <{}> - You're in! Group booking {} now has {} traveler(s) at {} per seat.",
+                recipientName,
+                toEmail,
+                bookingId,
+                participantCount,
+                pricePerSeat);
+    }
 
     @Override
     public void sendHotelReservationRequested(
