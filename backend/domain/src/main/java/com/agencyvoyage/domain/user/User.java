@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * material - that's an infrastructure/security concern (hashing, verification), not a
  * business concept, so it lives in the auth adapters instead.
  */
-public record User(UserId id, String email, String displayName) {
+public record User(UserId id, String email, String displayName, boolean isAdmin) {
 
     private static final Pattern SIMPLE_EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
@@ -20,5 +20,10 @@ public record User(UserId id, String email, String displayName) {
         if (displayName == null || displayName.isBlank()) {
             throw new IllegalArgumentException("displayName must not be blank");
         }
+    }
+
+    /** Most callers don't care about admin status - defaults to a regular (non-admin) user. */
+    public User(UserId id, String email, String displayName) {
+        this(id, email, displayName, false);
     }
 }

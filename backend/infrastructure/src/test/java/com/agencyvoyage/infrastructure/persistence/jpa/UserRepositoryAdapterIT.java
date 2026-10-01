@@ -46,4 +46,12 @@ class UserRepositoryAdapterIT extends AbstractPostgresIT {
     void findAccountByEmailIsEmptyForAnUnknownEmail() {
         assertThat(adapter.findAccountByEmail("nobody@example.com")).isEmpty();
     }
+
+    @Test
+    void persistsAndReloadsTheAdminFlag() {
+        User created = adapter.createAccount("admin@example.com", "hashed-password", "Admin", true);
+
+        assertThat(created.isAdmin()).isTrue();
+        assertThat(adapter.findById(created.id())).contains(created);
+    }
 }

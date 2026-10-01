@@ -33,10 +33,12 @@ public class JwtTokenParser {
     public Optional<ParsedToken> parse(String token) {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            Boolean isAdmin = claims.get("isAdmin", Boolean.class);
             return Optional.of(new ParsedToken(
                     UserId.of(claims.getSubject()),
                     claims.get("email", String.class),
-                    claims.get("displayName", String.class)));
+                    claims.get("displayName", String.class),
+                    isAdmin != null && isAdmin));
         } catch (JwtException | IllegalArgumentException e) {
             log.debug("Rejecting an invalid JWT: {}", e.getMessage());
             return Optional.empty();

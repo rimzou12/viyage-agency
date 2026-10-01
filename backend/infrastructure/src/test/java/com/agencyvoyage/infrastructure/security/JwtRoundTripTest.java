@@ -25,6 +25,18 @@ class JwtRoundTripTest {
         assertThat(parsed.get().userId()).isEqualTo(user.id());
         assertThat(parsed.get().email()).isEqualTo("alice@example.com");
         assertThat(parsed.get().displayName()).isEqualTo("Alice");
+        assertThat(parsed.get().isAdmin()).isFalse();
+    }
+
+    @Test
+    void anAdminUsersTokenParsesBackAsAdmin() {
+        User admin = new User(UserId.newId(), "admin@example.com", "Admin", true);
+
+        String token = issuer.issueToken(admin);
+        Optional<ParsedToken> parsed = parser.parse(token);
+
+        assertThat(parsed).isPresent();
+        assertThat(parsed.get().isAdmin()).isTrue();
     }
 
     @Test

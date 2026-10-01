@@ -1,5 +1,6 @@
 package com.agencyvoyage.web.config;
 
+import com.agencyvoyage.application.port.in.AddHotelUseCase;
 import com.agencyvoyage.application.port.in.ConfirmHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.FinalizeGroupBookingUseCase;
@@ -11,6 +12,7 @@ import com.agencyvoyage.application.port.in.JoinWaitlistUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
 import com.agencyvoyage.application.port.in.ListContactMessagesUseCase;
+import com.agencyvoyage.application.port.in.ListHotelsForTripUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.in.LoginUseCase;
 import com.agencyvoyage.application.port.in.RegisterUserUseCase;
@@ -21,10 +23,12 @@ import com.agencyvoyage.application.port.out.ContactMessageRepository;
 import com.agencyvoyage.application.port.out.EmailSender;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
+import com.agencyvoyage.application.port.out.HotelRepository;
 import com.agencyvoyage.application.port.out.PasswordHasher;
 import com.agencyvoyage.application.port.out.TokenIssuer;
 import com.agencyvoyage.application.port.out.TripRepository;
 import com.agencyvoyage.application.port.out.UserRepository;
+import com.agencyvoyage.application.service.AddHotelService;
 import com.agencyvoyage.application.service.ConfirmHotelReservationService;
 import com.agencyvoyage.application.service.CreateGroupBookingService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
@@ -35,6 +39,7 @@ import com.agencyvoyage.application.service.JoinWaitlistService;
 import com.agencyvoyage.application.service.LeaveGroupBookingService;
 import com.agencyvoyage.application.service.LeaveWaitlistService;
 import com.agencyvoyage.application.service.ListContactMessagesService;
+import com.agencyvoyage.application.service.ListHotelsForTripService;
 import com.agencyvoyage.application.service.LoginService;
 import com.agencyvoyage.application.service.RegisterUserService;
 import com.agencyvoyage.application.service.RequestHotelReservationService;
@@ -159,5 +164,15 @@ public class UseCaseWiringConfig {
     @Bean
     public ListContactMessagesUseCase listContactMessagesUseCase(ContactMessageRepository contactMessageRepository) {
         return new ListContactMessagesService(contactMessageRepository);
+    }
+
+    @Bean
+    public AddHotelUseCase addHotelUseCase(HotelRepository hotelRepository) {
+        return new AddHotelService(hotelRepository);
+    }
+
+    @Bean
+    public ListHotelsForTripUseCase listHotelsForTripUseCase(HotelRepository hotelRepository) {
+        return new ListHotelsForTripService(hotelRepository);
     }
 }

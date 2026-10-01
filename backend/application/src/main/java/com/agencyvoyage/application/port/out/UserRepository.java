@@ -12,5 +12,10 @@ public interface UserRepository {
 
     boolean existsByEmail(String email);
 
-    User createAccount(String email, String hashedPassword, String displayName);
+    /** Most callers register a regular (non-admin) user. */
+    default User createAccount(String email, String hashedPassword, String displayName) {
+        return createAccount(email, hashedPassword, displayName, false);
+    }
+
+    User createAccount(String email, String hashedPassword, String displayName, boolean isAdmin);
 }

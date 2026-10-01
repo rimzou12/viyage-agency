@@ -23,15 +23,19 @@ public class UserJpaEntity {
     @Column(name = "display_name", nullable = false)
     private String displayName;
 
+    @Column(name = "is_admin", nullable = false)
+    private boolean isAdmin;
+
     protected UserJpaEntity() {
         // JPA
     }
 
-    public UserJpaEntity(UUID id, String email, String passwordHash, String displayName) {
+    public UserJpaEntity(UUID id, String email, String passwordHash, String displayName, boolean isAdmin) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
+        this.isAdmin = isAdmin;
     }
 
     public UUID getId() {
@@ -48,5 +52,9 @@ public class UserJpaEntity {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public boolean isAdmin() {
+        return isAdmin;
     }
 }

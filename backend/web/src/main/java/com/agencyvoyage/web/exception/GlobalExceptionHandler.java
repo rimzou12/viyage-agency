@@ -3,6 +3,7 @@ package com.agencyvoyage.web.exception;
 import com.agencyvoyage.application.exception.EmailAlreadyRegisteredException;
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.exception.InvalidCredentialsException;
+import com.agencyvoyage.application.exception.NotAnAdminException;
 import com.agencyvoyage.application.exception.TripNotFoundException;
 import com.agencyvoyage.domain.exception.DomainException;
 import com.agencyvoyage.web.dto.ErrorResponse;
@@ -28,6 +29,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(NotAnAdminException.class)
+    public ResponseEntity<ErrorResponse> handleNotAnAdmin(NotAnAdminException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(DomainException.class)

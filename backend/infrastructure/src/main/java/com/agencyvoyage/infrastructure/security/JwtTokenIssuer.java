@@ -30,6 +30,7 @@ public class JwtTokenIssuer implements TokenIssuer {
                 .subject(user.id().toString())
                 .claim("email", user.email())
                 .claim("displayName", user.displayName())
+                .claim("isAdmin", user.isAdmin())
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs))
                 .signWith(key)
