@@ -109,6 +109,14 @@ Reframing the kata's original group-purchase stories for trips:
 - Once a group's deadline passes: if it reached the trip's minimum participants, the
   trip is confirmed at whatever price tier the final count landed on; otherwise it's
   cancelled.
+- Once a group booking is `CONFIRMED`, any logged-in user can record a hotel
+  reservation reference for it (`PENDING`), then confirm that reservation
+  (`CONFIRMED`) - confirming emails every participant their confirmation, and
+  requesting emails them too, letting them know a reservation is pending.
+- Any logged-in user can send the admin a message (subject + text) from the Contact
+  Admin page; any logged-in user can read the inbox back.
+- An admin can curate a hotel catalog per trip (name, description, photo URLs),
+  visible to everyone browsing that trip; only an admin can add to it.
 
 ## Running it locally
 
@@ -150,16 +158,31 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId`/`myWaitlistEntryId`/`myPricePerSeat` if a valid token is sent) |
 | GET    | `/api/group-bookings/{bookingId}/events`  | -    | SSE stream: a ping each time the booking changes |
 | GET    | `/api/group-bookings/{bookingId}/audit-trail` | -    | Full history (joins/leaves/finalization), oldest first |
+| POST   | `/api/group-bookings/{bookingId}/hotel-reservation` | required | Record a hotel reservation reference (`{reference}`) for a `CONFIRMED` booking → `PENDING`. Emails every participant |
+| POST   | `/api/group-bookings/{bookingId}/hotel-reservation/confirm` | required | Confirm a `PENDING` reservation → `CONFIRMED`. Emails every participant |
+| POST   | `/api/contact-messages`                   | required | Send the admin a message (`{subject, message}`) |
+| GET    | `/api/contact-messages`                   | required | List every contact message, newest first |
+| GET    | `/api/trips/{tripId}/hotels`              | -    | List the hotel catalog for a trip |
+| POST   | `/api/trips/{tripId}/hotels`              | admin only | Add a hotel to a trip's catalog (`{name, description, photoUrls}`) - `403` for a non-admin |
 
 Authenticated requests send `Authorization: Bearer <token>`, a JWT (HS256) returned by
 register/login. Its secret and expiration are configured via
 `agency-voyage.jwt.secret` / `agency-voyage.jwt.expiration-ms` in `application.yml`
 (overridable with the `AGENCY_VOYAGE_JWT_SECRET` env var - the default is a dev-only
-value, change it for anything beyond local use).
+value, change it for anything beyond local use). The token also carries an `isAdmin`
+claim, so admin status survives round-trips without a database lookup on every request.
 
-Errors: `401` for a missing/invalid token on a protected endpoint, `404` for an unknown
+There's no public admin-registration flow - `AdminUserSeeder` creates one admin account
+on startup if it doesn't already exist (`admin@agencyvoyage.example` /
+`admin12345` by default, overridable via `AGENCY_VOYAGE_ADMIN_EMAIL` /
+`AGENCY_VOYAGE_ADMIN_PASSWORD` - dev-only credentials, change them for anything beyond
+local use).
+
+Errors: `401` for a missing/invalid token on a protected endpoint, `403` for an
+authenticated but non-admin caller on an admin-only endpoint, `404` for an unknown
 trip/booking, `409` for a domain rule violation (group full, deadline passed, already
-finalized, already joined, email already registered), `400` for validation failures.
+finalized, already joined, email already registered, hotel reservation requested out of
+order), `400` for validation failures.
 
 ## Testing
 
@@ -207,6 +230,7 @@ into by this work - branches are merged in by hand, in order:
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
+→ `hotel-reservation-and-contact-admin` → `admin-hotel-catalog`
 
 ## Simplifications and next steps
 
@@ -254,5 +278,18 @@ Documented deliberately, not accidentally missed:
   (discounts stack indefinitely, floored at a $0 seat) and no check for collusion (two
   accounts referring each other back and forth). Fine for an MVP demonstrating the
   mechanic, not for production.
+- **Hotel reservations and the contact-admin inbox aren't gated by the admin role.**
+  Confirming a hotel reservation and reading the contact-message inbox are open to any
+  logged-in user, not just admins - these predate `isAdmin` and were deliberately kept
+  as a simplification (the user explicitly chose "any logged-in user" over building a
+  full admin inbox). Only the hotel *catalog* (`POST /api/trips/{tripId}/hotels`) is
+  actually admin-gated.
+- **Hotel reservation confirmation emails are simulated, like Kafka notifications.**
+  `LoggingEmailSender` logs what would be sent (to the requester on request, to every
+  participant on confirmation) instead of calling a real provider - the same
+  simplification already made for `NotificationKafkaListener`, not wired to SES/SendGrid/etc.
+- **Hotel catalog photos are plain URLs, not an upload flow.** Same simplification as
+  trip photos: an admin pastes image URLs when adding a hotel - no file upload or
+  object storage.
 - **Further bonus ideas from the original brainstorm** not built here: multi-currency
   pricing.
