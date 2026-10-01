@@ -134,8 +134,11 @@ public class UseCaseWiringConfig {
 
     @Bean
     public RequestHotelReservationUseCase requestHotelReservationUseCase(
-            GroupBookingRepository groupBookingRepository, Clock clock) {
-        return new RequestHotelReservationService(groupBookingRepository, clock);
+            GroupBookingRepository groupBookingRepository,
+            UserRepository userRepository,
+            EmailSender emailSender,
+            Clock clock) {
+        return new RequestHotelReservationService(groupBookingRepository, userRepository, emailSender, clock);
     }
 
     @Bean

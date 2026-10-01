@@ -109,6 +109,43 @@
       }
     }
 
+    @if (b.status === 'CONFIRMED' && auth.isLoggedIn()) {
+      <section class="hotel-reservation">
+        <h2>Hotel reservation</h2>
+        @if (b.hotelReservationStatus === 'NOT_REQUESTED') {
+          <p>Once you have a reservation with the hotel, record its reference here.</p>
+          <mat-form-field appearance="outline">
+            <mat-label>Reservation reference</mat-label>
+            <input matInput [ngModel]="hotelReference()" (ngModelChange)="hotelReference.set($event)" />
+          </mat-form-field>
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="requestingReservation() || !hotelReference().trim()"
+            (click)="requestHotelReservation()"
+          >
+            {{ requestingReservation() ? 'Saving...' : 'Request reservation' }}
+          </button>
+          @if (requestReservationError()) {
+            <p class="error">{{ requestReservationError() }}</p>
+          }
+        } @else if (b.hotelReservationStatus === 'PENDING') {
+          <p>Reservation reference <strong>{{ b.hotelReservationReference }}</strong> is pending confirmation.</p>
+          <button mat-flat-button type="button" [disabled]="confirmingReservation()" (click)="confirmHotelReservation()">
+            {{ confirmingReservation() ? 'Confirming...' : 'Confirm reservation' }}
+          </button>
+          <p class="hint">Confirming emails every traveler in this group.</p>
+          @if (confirmReservationError()) {
+            <p class="error">{{ confirmReservationError() }}</p>
+          }
+        } @else {
+          <p class="full">
+            Reservation <strong>{{ b.hotelReservationReference }}</strong> is confirmed - every traveler has been emailed.
+          </p>
+        }
+      </section>
+    }
+
     <section class="participants">
       <h2>Who's in</h2>
       <ul>

@@ -2,12 +2,16 @@ package com.agencyvoyage.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.port.in.RequestHotelReservationCommand;
+import com.agencyvoyage.application.port.out.EmailSender;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
+import com.agencyvoyage.application.port.out.UserRepository;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.HotelReservationStatus;
@@ -17,6 +21,7 @@ import com.agencyvoyage.domain.exception.BookingNotConfirmedException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
 import com.agencyvoyage.domain.trip.TripId;
+import com.agencyvoyage.domain.user.User;
 import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -40,18 +45,27 @@ class RequestHotelReservationServiceTest {
     @Mock
     private GroupBookingRepository groupBookingRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private EmailSender emailSender;
+
     private RequestHotelReservationService service;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-        service = new RequestHotelReservationService(groupBookingRepository, clock);
+        service = new RequestHotelReservationService(groupBookingRepository, userRepository, emailSender, clock);
     }
 
     @Test
-    void marksTheReservationPending() {
-        GroupBooking booking = confirmedBooking();
+    void marksTheReservationPendingAndEmailsEveryParticipant() {
+        UserId aliceId = UserId.newId();
+        GroupBooking booking = confirmedBooking(aliceId);
+        User alice = new User(aliceId, "alice@example.com", "Alice");
         when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
+        when(userRepository.findById(aliceId)).thenReturn(Optional.of(alice));
 
         GroupBooking result =
                 service.requestHotelReservation(new RequestHotelReservationCommand(booking.id(), "REF-1"));
@@ -59,6 +73,19 @@ class RequestHotelReservationServiceTest {
         assertThat(result.hotelReservationStatus()).isEqualTo(HotelReservationStatus.PENDING);
         assertThat(result.hotelReservationReference()).isEqualTo("REF-1");
         verify(groupBookingRepository).save(booking);
+        verify(emailSender).sendHotelReservationRequested("alice@example.com", "Alice", booking.id(), "REF-1");
+    }
+
+    @Test
+    void skipsEmailingAParticipantWhoseUserRecordIsMissing() {
+        UserId aliceId = UserId.newId();
+        GroupBooking booking = confirmedBooking(aliceId);
+        when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
+        when(userRepository.findById(aliceId)).thenReturn(Optional.empty());
+
+        service.requestHotelReservation(new RequestHotelReservationCommand(booking.id(), "REF-1"));
+
+        verify(emailSender, never()).sendHotelReservationRequested(any(), any(), any(), any());
     }
 
     @Test
@@ -80,9 +107,10 @@ class RequestHotelReservationServiceTest {
                 .isInstanceOf(BookingNotConfirmedException.class);
     }
 
-    private static GroupBooking confirmedBooking() {
+    private static GroupBooking confirmedBooking(UserId creatorUserId) {
         Trip trip = trip();
-        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice"), NOW);
+        GroupBooking booking = GroupBooking.open(
+                GroupBookingId.newId(), trip, new Participant(ParticipantId.newId(), creatorUserId, "Alice", NOW), NOW);
         booking.finalizeBooking(NOW.plus(2, ChronoUnit.DAYS));
         return booking;
     }

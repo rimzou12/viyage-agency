@@ -46,6 +46,21 @@ export class GroupBookingService {
     return this.http.get<AuditEvent[]>(`${API_BASE_URL}/api/group-bookings/${bookingId}/audit-trail`);
   }
 
+  /** Only valid once the booking is CONFIRMED. */
+  requestHotelReservation(bookingId: string, reference: string): Observable<GroupBooking> {
+    return this.http.post<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}/hotel-reservation`, {
+      reference,
+    });
+  }
+
+  /** Only valid once a reservation has been requested (PENDING). Emails every participant. */
+  confirmHotelReservation(bookingId: string): Observable<GroupBooking> {
+    return this.http.post<GroupBooking>(
+      `${API_BASE_URL}/api/group-bookings/${bookingId}/hotel-reservation/confirm`,
+      {},
+    );
+  }
+
   /**
    * Emits (with no payload) whenever the backend pushes a live update for this booking
    * over SSE - a signal to re-fetch, not a copy of the booking itself. Never errors or

@@ -17,6 +17,18 @@ public class LoggingEmailSender implements EmailSender {
     private static final Logger log = LoggerFactory.getLogger(LoggingEmailSender.class);
 
     @Override
+    public void sendHotelReservationRequested(
+            String toEmail, String recipientName, GroupBookingId bookingId, String reference) {
+        log.info(
+                "[EMAIL] To: {} <{}> - A hotel reservation for group booking {} has been requested. "
+                        + "Reference: {}. We'll email you again once it's confirmed.",
+                recipientName,
+                toEmail,
+                bookingId,
+                reference);
+    }
+
+    @Override
     public void sendHotelReservationConfirmed(
             String toEmail, String recipientName, GroupBookingId bookingId, String reference) {
         log.info(

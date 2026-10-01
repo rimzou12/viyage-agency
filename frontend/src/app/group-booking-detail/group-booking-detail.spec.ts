@@ -254,6 +254,8 @@ describe('GroupBookingDetail', () => {
       waitlist: [],
       myWaitlistEntryId: null,
       myPricePerSeat: null,
+      hotelReservationStatus: 'NOT_REQUESTED',
+      hotelReservationReference: null,
     };
   }
 });

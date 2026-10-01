@@ -18,6 +18,8 @@ export interface Trip {
 
 export type GroupBookingStatus = 'OPEN' | 'CONFIRMED' | 'CANCELLED';
 
+export type HotelReservationStatus = 'NOT_REQUESTED' | 'PENDING' | 'CONFIRMED';
+
 export interface Participant {
   id: string;
   customerName: string;
@@ -51,6 +53,9 @@ export interface GroupBooking {
   myWaitlistEntryId: string | null;
   /** The caller's own price per seat, including any referral discount. Null unless the caller is a participant. */
   myPricePerSeat: number | null;
+  hotelReservationStatus: HotelReservationStatus;
+  /** Set once a reservation has been requested; null while NOT_REQUESTED. */
+  hotelReservationReference: string | null;
 }
 
 export type AuditEventType = 'PARTICIPANT_JOINED' | 'PARTICIPANT_LEFT' | 'FINALIZED';
@@ -75,4 +80,13 @@ export interface User {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface ContactMessage {
+  id: string;
+  authorName: string;
+  authorEmail: string;
+  subject: string;
+  message: string;
+  sentAt: string;
 }
