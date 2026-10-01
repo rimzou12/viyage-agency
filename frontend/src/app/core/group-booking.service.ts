@@ -15,8 +15,13 @@ export class GroupBookingService {
     return this.http.post<GroupBooking>(`${API_BASE_URL}/api/trips/${tripId}/group-bookings`, {});
   }
 
-  joinGroupBooking(bookingId: string): Observable<GroupBooking> {
-    return this.http.post<GroupBooking>(`${API_BASE_URL}/api/group-bookings/${bookingId}/participants`, {});
+  /** @param referrerParticipantId pass the inviter's participant id to credit both sides with a referral discount. */
+  joinGroupBooking(bookingId: string, referrerParticipantId?: string | null): Observable<GroupBooking> {
+    const url = `${API_BASE_URL}/api/group-bookings/${bookingId}/participants`;
+    return this.http.post<GroupBooking>(
+      referrerParticipantId ? `${url}?ref=${encodeURIComponent(referrerParticipantId)}` : url,
+      {},
+    );
   }
 
   leaveGroupBooking(bookingId: string): Observable<GroupBooking> {

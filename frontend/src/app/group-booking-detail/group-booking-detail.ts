@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, interval, merge, startWith, switchMap } from 'rxjs';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
-import { AuditEvent, GroupBooking } from '../core/models';
+import { AuditEvent, GroupBooking, Participant } from '../core/models';
 
 /** Backstop only - live updates normally arrive over SSE well before this fires. */
 const FALLBACK_POLL_MS = 20000;
@@ -24,7 +24,10 @@ export class GroupBookingDetail {
   private readonly groupBookingService = inject(GroupBookingService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly bookingId = this.route.snapshot.paramMap.get('id')!;
+  /** Set when this page was opened from someone else's invite link (?ref=<theirParticipantId>). */
+  private readonly referrerParticipantId = this.route.snapshot.queryParamMap.get('ref');
   protected readonly auth = inject(AuthService);
+  protected readonly linkCopied = signal(false);
 
   protected readonly booking = signal<GroupBooking | null>(null);
   protected readonly auditTrail = signal<AuditEvent[]>([]);
@@ -53,6 +56,21 @@ export class GroupBookingDetail {
 
   /** Newest first, for a history feed you read top-down. */
   protected readonly auditTrailNewestFirst = computed(() => [...this.auditTrail()].reverse());
+
+  protected readonly referralSavings = computed(() => {
+    const booking = this.booking();
+    if (!booking || booking.myPricePerSeat === null) {
+      return 0;
+    }
+    return booking.currentPricePerSeat - booking.myPricePerSeat;
+  });
+
+  protected readonly inviteLink = computed(() => {
+    const participantId = this.myParticipantId();
+    return participantId
+      ? `${location.origin}/group-bookings/${this.bookingId}?ref=${encodeURIComponent(participantId)}`
+      : null;
+  });
 
   constructor() {
     // Live updates arrive over SSE (near-instant); the periodic timer is just a
@@ -86,7 +104,7 @@ export class GroupBookingDetail {
   protected join(): void {
     this.joining.set(true);
     this.joinError.set(null);
-    this.groupBookingService.joinGroupBooking(this.bookingId).subscribe({
+    this.groupBookingService.joinGroupBooking(this.bookingId, this.referrerParticipantId).subscribe({
       next: (booking) => {
         this.booking.set(booking);
         this.joining.set(false);
@@ -95,6 +113,17 @@ export class GroupBookingDetail {
         this.joining.set(false);
         this.joinError.set(apiErrorMessage(err, 'Could not join this group.'));
       },
+    });
+  }
+
+  protected copyInviteLink(): void {
+    const link = this.inviteLink();
+    if (!link) {
+      return;
+    }
+    navigator.clipboard.writeText(link).then(() => {
+      this.linkCopied.set(true);
+      setTimeout(() => this.linkCopied.set(false), 2000);
     });
   }
 
@@ -141,6 +170,13 @@ export class GroupBookingDetail {
         this.leaveWaitlistError.set(apiErrorMessage(err, 'Could not leave the waitlist.'));
       },
     });
+  }
+
+  protected referrerName(participant: Participant, booking: GroupBooking): string | null {
+    if (!participant.referredByParticipantId) {
+      return null;
+    }
+    return booking.participants.find((p) => p.id === participant.referredByParticipantId)?.customerName ?? null;
   }
 
   protected seatsRemaining(booking: GroupBooking): number {

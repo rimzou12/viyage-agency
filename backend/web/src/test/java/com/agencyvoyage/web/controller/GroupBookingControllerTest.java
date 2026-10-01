@@ -2,6 +2,7 @@ package com.agencyvoyage.web.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
@@ -29,6 +30,7 @@ import com.agencyvoyage.domain.booking.WaitlistEntryId;
 import com.agencyvoyage.domain.exception.AlreadyWaitlistedException;
 import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
@@ -124,6 +126,34 @@ class GroupBookingControllerTest {
     }
 
     @Test
+    void joinPassesTheRefQueryParamThroughAsTheReferrer() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        ParticipantId referrerId = ParticipantId.newId();
+        GroupBooking booking = booking(bookingId, ALICE.id());
+        when(joinGroupBookingUseCase.joinGroupBooking(any(JoinGroupBookingCommand.class))).thenReturn(booking);
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/participants?ref=" + referrerId)
+                        .with(asAlice()))
+                .hasStatusOk();
+
+        verify(joinGroupBookingUseCase)
+                .joinGroupBooking(new JoinGroupBookingCommand(bookingId, ALICE, referrerId));
+    }
+
+    @Test
+    void returns409ForAnInvalidReferrer() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        when(joinGroupBookingUseCase.joinGroupBooking(any(JoinGroupBookingCommand.class)))
+                .thenThrow(new InvalidReferralException(bookingId, ParticipantId.newId()));
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/participants?ref=" + ParticipantId.newId())
+                        .with(asAlice()))
+                .hasStatus(409);
+    }
+
+    @Test
     void returns404WhenTheBookingDoesNotExist() {
         GroupBookingId unknownId = GroupBookingId.newId();
         when(getGroupBookingUseCase.getGroupBooking(unknownId))
@@ -143,6 +173,19 @@ class GroupBookingControllerTest {
                 .bodyJson()
                 .extractingPath("$.status")
                 .isEqualTo("OPEN");
+    }
+
+    @Test
+    void getReturnsMyPricePerSeatDiscountedWhenIReferredSomeone() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        GroupBooking booking = bookingWithAReferral(bookingId, ALICE.id());
+        when(getGroupBookingUseCase.getGroupBooking(bookingId)).thenReturn(booking);
+
+        assertThat(mvc.get().uri("/api/group-bookings/" + bookingId).with(asAlice()))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.myPricePerSeat")
+                .isEqualTo(950.0);
     }
 
     @Test
@@ -268,6 +311,33 @@ class GroupBookingControllerTest {
                 schedule,
                 GroupBookingStatus.OPEN,
                 List.of(creator),
+                List.of());
+    }
+
+    private static GroupBooking bookingWithAReferral(GroupBookingId id, UserId referrerUserId) {
+        PricingSchedule schedule = PricingSchedule.of(new BigDecimal("1000"), List.of(), 5);
+        Trip trip = new Trip(
+                TripId.newId(),
+                "Bali",
+                "desc",
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 20),
+                2,
+                5,
+                Instant.now().plus(30, ChronoUnit.DAYS),
+                schedule);
+        Participant referrer = new Participant(ParticipantId.newId(), referrerUserId, "Alice", Instant.now());
+        Participant referred = new Participant(
+                ParticipantId.newId(), UserId.newId(), "Bob", Instant.now(), referrer.id());
+        return GroupBooking.reconstitute(
+                id,
+                trip.id(),
+                trip.minParticipants(),
+                trip.maxParticipants(),
+                trip.bookingDeadline(),
+                schedule,
+                GroupBookingStatus.OPEN,
+                List.of(referrer, referred),
                 List.of());
     }
 

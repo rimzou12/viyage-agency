@@ -16,6 +16,7 @@ import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.trip.PriceTier;
 import com.agencyvoyage.domain.trip.PricingSchedule;
 import com.agencyvoyage.domain.trip.Trip;
@@ -66,6 +67,32 @@ class JoinGroupBookingServiceTest {
         assertThat(result.currentPricePerSeat()).isEqualByComparingTo("800");
         verify(groupBookingRepository).save(booking);
         verify(eventPublisher).publishParticipantJoined(any(ParticipantJoinedEvent.class));
+    }
+
+    @Test
+    void joiningWithAReferrerDiscountsBothParticipants() {
+        GroupBooking booking = openBooking(2, 5);
+        ParticipantId aliceId = booking.participants().get(0).id();
+        when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
+
+        GroupBooking result =
+                service.joinGroupBooking(new JoinGroupBookingCommand(booking.id(), bob(), aliceId));
+
+        ParticipantId bobId = result.participants().get(1).id();
+        assertThat(result.pricePerSeatFor(aliceId))
+                .isEqualByComparingTo(result.currentPricePerSeat().subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+        assertThat(result.pricePerSeatFor(bobId))
+                .isEqualByComparingTo(result.currentPricePerSeat().subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+    }
+
+    @Test
+    void propagatesDomainRuleViolationsLikeAnInvalidReferrer() {
+        GroupBooking booking = openBooking(2, 5);
+        when(groupBookingRepository.findById(booking.id())).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> service.joinGroupBooking(
+                        new JoinGroupBookingCommand(booking.id(), bob(), ParticipantId.newId())))
+                .isInstanceOf(InvalidReferralException.class);
     }
 
     @Test

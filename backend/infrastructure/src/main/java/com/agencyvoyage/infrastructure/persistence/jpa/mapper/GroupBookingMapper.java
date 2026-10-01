@@ -31,7 +31,12 @@ public final class GroupBookingMapper {
                 .map(tier -> new PriceTierEmbeddable(tier.minParticipants(), tier.pricePerSeat()))
                 .toList();
         List<ParticipantJpaEntity> participants = booking.participants().stream()
-                .map(p -> new ParticipantJpaEntity(p.id().value(), p.userId().value(), p.customerName(), p.joinedAt()))
+                .map(p -> new ParticipantJpaEntity(
+                        p.id().value(),
+                        p.userId().value(),
+                        p.customerName(),
+                        p.joinedAt(),
+                        p.referredBy() == null ? null : p.referredBy().value()))
                 .toList();
         List<WaitlistEntryJpaEntity> waitlist = booking.waitlist().stream()
                 .map(w -> new WaitlistEntryJpaEntity(w.id().value(), w.userId().value(), w.customerName(), w.joinedAt()))
@@ -76,7 +81,8 @@ public final class GroupBookingMapper {
                         participant.id().value(),
                         participant.userId().value(),
                         participant.customerName(),
-                        participant.joinedAt()));
+                        participant.joinedAt(),
+                        participant.referredBy() == null ? null : participant.referredBy().value()));
             }
         }
 
@@ -105,7 +111,11 @@ public final class GroupBookingMapper {
         PricingSchedule schedule = PricingSchedule.of(entity.getBasePrice(), tiers, entity.getMaxParticipants());
         List<Participant> participants = entity.getParticipants().stream()
                 .map(p -> new Participant(
-                        new ParticipantId(p.getId()), new UserId(p.getUserId()), p.getCustomerName(), p.getJoinedAt()))
+                        new ParticipantId(p.getId()),
+                        new UserId(p.getUserId()),
+                        p.getCustomerName(),
+                        p.getJoinedAt(),
+                        p.getReferredByParticipantId() == null ? null : new ParticipantId(p.getReferredByParticipantId())))
                 .toList();
         List<WaitlistEntry> waitlist = entity.getWaitlist().stream()
                 .map(w -> new WaitlistEntry(

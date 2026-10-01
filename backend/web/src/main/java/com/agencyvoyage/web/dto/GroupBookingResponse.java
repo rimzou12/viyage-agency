@@ -2,6 +2,7 @@ package com.agencyvoyage.web.dto;
 
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.Participant;
+import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.booking.WaitlistEntry;
 import com.agencyvoyage.domain.user.UserId;
 import java.math.BigDecimal;
@@ -21,7 +22,8 @@ public record GroupBookingResponse(
         List<ParticipantResponse> participants,
         String myParticipantId,
         List<WaitlistEntryResponse> waitlist,
-        String myWaitlistEntryId) {
+        String myWaitlistEntryId,
+        BigDecimal myPricePerSeat) {
 
     public static GroupBookingResponse from(GroupBooking booking) {
         return from(booking, null);
@@ -41,12 +43,11 @@ public record GroupBookingResponse(
         List<PriceTierResponse> priceTiers = booking.pricingSchedule().tiers().stream()
                 .map(tier -> new PriceTierResponse(tier.minParticipants(), tier.pricePerSeat()))
                 .toList();
-        String myParticipantId = currentUserId == null
+        ParticipantId myParticipantId = currentUserId == null
                 ? null
                 : booking.participants().stream()
                         .filter(p -> p.userId().equals(currentUserId))
                         .map(Participant::id)
-                        .map(Object::toString)
                         .findFirst()
                         .orElse(null);
         String myWaitlistEntryId = currentUserId == null
@@ -57,6 +58,7 @@ public record GroupBookingResponse(
                         .map(Object::toString)
                         .findFirst()
                         .orElse(null);
+        BigDecimal myPricePerSeat = myParticipantId == null ? null : booking.pricePerSeatFor(myParticipantId);
         return new GroupBookingResponse(
                 booking.id().toString(),
                 booking.tripId().toString(),
@@ -68,8 +70,9 @@ public record GroupBookingResponse(
                 booking.deadline(),
                 priceTiers,
                 participants,
-                myParticipantId,
+                myParticipantId == null ? null : myParticipantId.toString(),
                 waitlist,
-                myWaitlistEntryId);
+                myWaitlistEntryId,
+                myPricePerSeat);
     }
 }
