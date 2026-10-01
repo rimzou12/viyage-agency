@@ -6,8 +6,12 @@
   </div>
 
   @if (images().length > 1) {
-    <button type="button" class="nav prev" aria-label="Previous photo" (click)="previous($event)">&#10094;</button>
-    <button type="button" class="nav next" aria-label="Next photo" (click)="next($event)">&#10095;</button>
+    <button type="button" class="nav prev" aria-label="Previous photo" (click)="previous($event)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button type="button" class="nav next" aria-label="Next photo" (click)="next($event)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
 
     <div class="dots">
       @for (i of indices(); track i) {

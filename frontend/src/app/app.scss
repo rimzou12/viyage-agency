@@ -1,45 +1,55 @@
 .nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid #e2e5ea;
-  background: #fff;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  background: var(--glass-surface) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--mat-sys-on-surface) !important;
 
   .brand {
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: #1a1a1a;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
     text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .spacer {
+    flex: 1 1 auto;
   }
 
   .account {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 1rem;
     font-size: 0.9rem;
 
-    a {
-      color: #1a6b3c;
+    a:not(.register) {
+      color: var(--mat-sys-on-surface-variant);
       text-decoration: none;
+      transition: color 0.2s var(--ease-swift);
 
       &:hover {
-        text-decoration: underline;
+        color: var(--mat-sys-primary);
       }
     }
 
     .hello {
-      color: #5b6472;
+      color: var(--mat-sys-on-surface-variant);
     }
 
-    button {
-      padding: 0.35rem 0.8rem;
-      border: 1px solid #cfd4db;
-      border-radius: 8px;
-      background: #fff;
-      font-size: 0.85rem;
-      cursor: pointer;
+    button mat-icon {
+      margin-right: 0.3rem;
+      font-size: 1.1rem;
+      height: 1.1rem;
+      width: 1.1rem;
+      vertical-align: middle;
     }
   }
 }

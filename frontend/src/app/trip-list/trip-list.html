@@ -1,9 +1,12 @@
 <main class="page">
-  <h1>Group trips</h1>
+  <h1 class="accent-heading">Group trips</h1>
   <p class="subtitle">Join a group booking and the price per seat drops as more people sign up.</p>
 
   @if (loading()) {
-    <p>Loading trips...</p>
+    <div class="loading">
+      <mat-spinner diameter="36" />
+      <p>Loading trips...</p>
+    </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (trips().length === 0) {

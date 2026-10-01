@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { TripList } from './trip-list';
 import { API_BASE_URL } from '../core/api-config';
 import { Trip } from '../core/models';
@@ -12,7 +13,12 @@ describe('TripList', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TripList],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideNoopAnimations(),
+      ],
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
   });

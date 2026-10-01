@@ -1,23 +1,26 @@
 <main class="page">
-  <h1>Log in</h1>
+  <div class="auth-card">
+    <h1 class="accent-heading">Welcome back</h1>
+    <p class="tagline">Log in to join your next adventure.</p>
 
-  <form (submit)="$event.preventDefault(); submit(emailInput.value, passwordInput.value)">
-    <label>
-      Email
-      <input #emailInput type="email" required [disabled]="submitting()" />
-    </label>
-    <label>
-      Password
-      <input #passwordInput type="password" required [disabled]="submitting()" />
-    </label>
-    <button type="submit" [disabled]="submitting()">
-      {{ submitting() ? 'Logging in...' : 'Log in' }}
-    </button>
-  </form>
+    <form (submit)="$event.preventDefault(); submit(emailInput.value, passwordInput.value)">
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput #emailInput type="email" required [disabled]="submitting()" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input matInput #passwordInput type="password" required [disabled]="submitting()" />
+      </mat-form-field>
+      <button mat-flat-button type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Logging in...' : 'Log in' }}
+      </button>
+    </form>
 
-  @if (error()) {
-    <p class="error">{{ error() }}</p>
-  }
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
 
-  <p class="switch">No account yet? <a routerLink="/register">Register</a></p>
+    <p class="switch">No account yet? <a routerLink="/register">Register</a></p>
+  </div>
 </main>

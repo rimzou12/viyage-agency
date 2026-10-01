@@ -2,7 +2,10 @@
   <a class="back" routerLink="/">&larr; All trips</a>
 
   @if (loading()) {
-    <p>Loading trip...</p>
+    <div class="loading">
+      <mat-spinner diameter="36" />
+      <p>Loading trip...</p>
+    </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (trip(); as t) {
@@ -49,11 +52,11 @@
       <h2>Start a group</h2>
       <p>Be the first to join - others can then hop in and the price drops for everyone.</p>
       @if (auth.isLoggedIn()) {
-        <button type="button" [disabled]="creating()" (click)="startGroup()">
+        <button mat-flat-button type="button" [disabled]="creating()" (click)="startGroup()">
           {{ creating() ? 'Starting...' : 'Start this group as ' + auth.currentUser()?.displayName }}
         </button>
       } @else {
-        <a class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/trips/' + t.id }">
+        <a mat-flat-button class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/trips/' + t.id }">
           Log in to start a group
         </a>
       }

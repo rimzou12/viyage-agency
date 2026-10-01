@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripService } from '../core/trip.service';
 import { Trip } from '../core/models';
 import { tripPhotoUrls } from '../core/photos';
@@ -9,7 +10,7 @@ import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 @Component({
   selector: 'app-trip-list',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel],
+  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel, MatProgressSpinnerModule],
   templateUrl: './trip-list.html',
   styleUrl: './trip-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

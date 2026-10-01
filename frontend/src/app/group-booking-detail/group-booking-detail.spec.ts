@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { EMPTY, Observable } from 'rxjs';
 import { GroupBookingDetail } from './group-booking-detail';
 import { GroupBookingService } from '../core/group-booking.service';
@@ -37,6 +38,7 @@ describe('GroupBookingDetail', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: GroupBookingService, useClass: TestGroupBookingService },
         {
           provide: ActivatedRoute,
@@ -181,6 +183,7 @@ describe('GroupBookingDetail', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: GroupBookingService, useClass: TestGroupBookingService },
         {
           provide: ActivatedRoute,
