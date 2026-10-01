@@ -81,6 +81,12 @@ h1 {
         color: #1a6b3c;
       }
     }
+
+    .savings {
+      font-size: 0.72rem;
+      color: #b8860b;
+      font-weight: 600;
+    }
   }
 }
 
@@ -116,6 +122,52 @@ h1 {
     &:disabled {
       opacity: 0.6;
       cursor: default;
+    }
+  }
+}
+
+.invite {
+  margin-bottom: 2rem;
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  background: #f6f7f9;
+
+  h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.3rem;
+  }
+
+  p {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: #5b6472;
+  }
+
+  .link-row {
+    display: flex;
+    gap: 0.5rem;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #cfd4db;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.85rem;
+      color: #333;
+    }
+
+    button {
+      flex: 0 0 auto;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #1a6b3c;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
     }
   }
 }
@@ -187,6 +239,11 @@ h1 {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+  }
+
+  .referred {
+    font-size: 0.72rem;
+    color: #b8860b;
   }
 }
 

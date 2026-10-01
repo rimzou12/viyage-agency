@@ -78,6 +78,9 @@ Reframing the kata's original group-purchase stories for trips:
 - Once a group is full, new customers can join its waitlist instead. If a participant
   leaves before the deadline, the longest-waiting person on the waitlist is
   automatically promoted into the freed seat.
+- Every participant can share an invite link for their group. A friend who joins
+  through it gets $50 off their seat, and so does the person who invited them -
+  discounts stack if someone refers several friends.
 - Once a group's deadline passes: if it reached the trip's minimum participants, the
   trip is confirmed at whatever price tier the final count landed on; otherwise it's
   cancelled.
@@ -115,11 +118,11 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/trips`                              | -    | List the trip catalog                 |
 | GET    | `/api/trips/{tripId}`                     | -    | Get one trip                          |
 | POST   | `/api/trips/{tripId}/group-bookings`      | required | Start a group booking as the caller |
-| POST   | `/api/group-bookings/{bookingId}/participants` | required | Join a group booking as the caller |
+| POST   | `/api/group-bookings/{bookingId}/participants` | required | Join a group booking as the caller (`?ref={participantId}` credits a referral discount to both sides) |
 | DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller (auto-promotes the next waitlisted person, if any) |
 | POST   | `/api/group-bookings/{bookingId}/waitlist` | required | Join the waitlist - only once the group is full |
 | DELETE | `/api/group-bookings/{bookingId}/waitlist/me` | required | Leave the waitlist without waiting for a seat |
-| GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId`/`myWaitlistEntryId` if a valid token is sent) |
+| GET    | `/api/group-bookings/{bookingId}`         | -    | Get a group booking's current state (includes `myParticipantId`/`myWaitlistEntryId`/`myPricePerSeat` if a valid token is sent) |
 | GET    | `/api/group-bookings/{bookingId}/events`  | -    | SSE stream: a ping each time the booking changes |
 | GET    | `/api/group-bookings/{bookingId}/audit-trail` | -    | Full history (joins/leaves/finalization), oldest first |
 
@@ -178,7 +181,7 @@ into by this work - branches are merged in by hand, in order:
 `project-scaffold` → `domain-model` → `application-use-cases` → `persistence-postgres`
 → `kafka-events` → `rest-api` → `frontend-trip-catalog` → `frontend-group-booking` →
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
-`ui-carousels` → `audit-trail` → `waitlist`
+`ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts`
 
 ## Simplifications and next steps
 
@@ -220,5 +223,11 @@ Documented deliberately, not accidentally missed:
   becomes a full participant immediately and permanently - there's no "you have 10
   minutes to confirm your seat" step, so a promoted user who never comes back still
   occupies the seat until someone finalizes or they leave themselves.
-- **Further bonus ideas from the original brainstorm** not built here: referral/invite
-  discounts, multi-currency pricing.
+- **The referral discount is a flat amount, not configurable per trip, and doesn't
+  track fraud.** `GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT` is a single hardcoded $50
+  for every trip; there's also no limit on how many friends one person can refer
+  (discounts stack indefinitely, floored at a $0 seat) and no check for collusion (two
+  accounts referring each other back and forth). Fine for an MVP demonstrating the
+  mechanic, not for production.
+- **Further bonus ideas from the original brainstorm** not built here: multi-currency
+  pricing.

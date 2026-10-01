@@ -18,6 +18,15 @@
         <span class="label">Current price per seat</span>
         <span class="value price">{{ b.currentPricePerSeat | currency }}</span>
       </div>
+      @if (b.myPricePerSeat !== null) {
+        <div class="stat">
+          <span class="label">Your price per seat</span>
+          <span class="value price">{{ b.myPricePerSeat | currency }}</span>
+          @if (referralSavings() > 0) {
+            <span class="savings">{{ referralSavings() | currency }} off from referrals</span>
+          }
+        </div>
+      }
       <div class="stat">
         <span class="label">Booking closes</span>
         <span class="value">{{ b.deadline | date: 'medium' }}</span>
@@ -38,6 +47,15 @@
           @if (leaveError()) {
             <p class="error">{{ leaveError() }}</p>
           }
+        </section>
+
+        <section class="invite">
+          <h2>Invite friends</h2>
+          <p>Share your link - you and your friend both get $50 off when they join.</p>
+          <div class="link-row">
+            <input type="text" readonly [value]="inviteLink()" />
+            <button type="button" (click)="copyInviteLink()">{{ linkCopied() ? 'Copied!' : 'Copy link' }}</button>
+          </div>
         </section>
       } @else if (seatsRemaining(b) > 0) {
         <section class="join">
@@ -93,6 +111,9 @@
             {{ participant.customerName }}
             @if (participant.id === myParticipantId()) {
               <span class="you">you</span>
+            }
+            @if (referrerName(participant, b); as name) {
+              <span class="referred">via {{ name }}</span>
             }
           </li>
         }

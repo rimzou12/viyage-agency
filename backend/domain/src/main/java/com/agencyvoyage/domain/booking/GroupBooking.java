@@ -8,6 +8,7 @@ import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.exception.NotOnWaitlistException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
@@ -27,6 +28,9 @@ import java.util.Optional;
  * that later changes to the trip catalog do not retroactively affect an in-flight group.
  */
 public final class GroupBooking {
+
+    /** Flat amount off a seat's price per successful referral, for both the referrer and the referred. */
+    public static final BigDecimal REFERRAL_DISCOUNT_PER_CREDIT = new BigDecimal("50.00");
 
     private final GroupBookingId id;
     private final TripId tripId;
@@ -123,6 +127,10 @@ public final class GroupBooking {
         if (participants.stream().anyMatch(p -> p.userId().equals(participant.userId()))) {
             throw new AlreadyJoinedException(id, participant.userId());
         }
+        if (participant.referredBy() != null
+                && participants.stream().noneMatch(p -> p.id().equals(participant.referredBy()))) {
+            throw new InvalidReferralException(id, participant.referredBy());
+        }
         participants.add(participant);
     }
 
@@ -216,6 +224,26 @@ public final class GroupBooking {
 
     public BigDecimal currentPricePerSeat() {
         return pricingSchedule.priceFor(currentParticipantCount());
+    }
+
+    /**
+     * The tier price, discounted {@link #REFERRAL_DISCOUNT_PER_CREDIT} once for having
+     * joined via someone else's invite and once more per friend this participant
+     * successfully referred in turn - floored at zero so stacked referrals never go
+     * negative.
+     */
+    public BigDecimal pricePerSeatFor(ParticipantId participantId) {
+        Objects.requireNonNull(participantId, "participantId must not be null");
+        Participant participant = participants.stream()
+                .filter(p -> p.id().equals(participantId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Participant " + participantId + " is not in group booking " + id));
+
+        long credits = (participant.referredBy() != null ? 1 : 0)
+                + participants.stream().filter(p -> participantId.equals(p.referredBy())).count();
+        BigDecimal discount = REFERRAL_DISCOUNT_PER_CREDIT.multiply(BigDecimal.valueOf(credits));
+        return currentPricePerSeat().subtract(discount).max(BigDecimal.ZERO);
     }
 
     public boolean isFull() {

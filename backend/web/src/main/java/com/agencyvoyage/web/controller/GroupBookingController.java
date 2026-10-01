@@ -14,6 +14,7 @@ import com.agencyvoyage.application.port.in.LeaveWaitlistCommand;
 import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
+import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.trip.TripId;
 import com.agencyvoyage.domain.user.User;
 import com.agencyvoyage.web.dto.AuditEventResponse;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -68,9 +70,13 @@ public class GroupBookingController {
 
     @PostMapping("/api/group-bookings/{bookingId}/participants")
     public GroupBookingResponse joinGroupBooking(
-            @PathVariable String bookingId, @AuthenticationPrincipal User currentUser) {
-        GroupBooking booking = joinGroupBookingUseCase.joinGroupBooking(
-                new JoinGroupBookingCommand(GroupBookingId.of(bookingId), currentUser));
+            @PathVariable String bookingId,
+            @RequestParam(name = "ref", required = false) String referrerParticipantId,
+            @AuthenticationPrincipal User currentUser) {
+        GroupBooking booking = joinGroupBookingUseCase.joinGroupBooking(new JoinGroupBookingCommand(
+                GroupBookingId.of(bookingId),
+                currentUser,
+                referrerParticipantId == null ? null : ParticipantId.of(referrerParticipantId)));
         return GroupBookingResponse.from(booking, currentUser.id());
     }
 

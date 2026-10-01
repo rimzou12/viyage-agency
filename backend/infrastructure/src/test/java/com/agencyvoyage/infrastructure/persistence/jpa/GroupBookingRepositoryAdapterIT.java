@@ -61,6 +61,26 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
     }
 
     @Test
+    void persistsAndReloadsAReferralDiscount() {
+        Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
+        ParticipantId aliceId = booking.participants().get(0).id();
+        adapter.save(booking);
+
+        booking.join(new Participant(ParticipantId.newId(), UserId.newId(), "Bob", now, aliceId), now);
+        adapter.save(booking);
+
+        GroupBooking reloaded = adapter.findById(booking.id()).orElseThrow();
+        ParticipantId bobId = reloaded.participants().get(1).id();
+        assertThat(reloaded.participants().get(1).referredBy()).isEqualTo(aliceId);
+        assertThat(reloaded.pricePerSeatFor(aliceId))
+                .isEqualByComparingTo(reloaded.currentPricePerSeat().subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+        assertThat(reloaded.pricePerSeatFor(bobId))
+                .isEqualByComparingTo(reloaded.currentPricePerSeat().subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+    }
+
+    @Test
     void persistsAParticipantLeavingAfterTheInitialSave() {
         Trip trip = trip(Instant.now().plus(1, ChronoUnit.DAYS));
         Instant now = Instant.now();

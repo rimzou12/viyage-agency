@@ -22,6 +22,8 @@ export interface Participant {
   id: string;
   customerName: string;
   joinedAt: string;
+  /** The participant whose invite link this person joined through, or null for an organic join. */
+  referredByParticipantId: string | null;
 }
 
 export interface WaitlistEntry {
@@ -47,6 +49,8 @@ export interface GroupBooking {
   waitlist: WaitlistEntry[];
   /** Which waitlist entry (if any) belongs to the caller, computed from the auth token. */
   myWaitlistEntryId: string | null;
+  /** The caller's own price per seat, including any referral discount. Null unless the caller is a participant. */
+  myPricePerSeat: number | null;
 }
 
 export type AuditEventType = 'PARTICIPANT_JOINED' | 'PARTICIPANT_LEFT' | 'FINALIZED';

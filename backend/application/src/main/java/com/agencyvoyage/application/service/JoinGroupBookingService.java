@@ -34,7 +34,11 @@ public final class JoinGroupBookingService implements JoinGroupBookingUseCase {
 
         Instant now = clock.instant();
         Participant participant = new Participant(
-                ParticipantId.newId(), command.actingUser().id(), command.actingUser().displayName(), now);
+                ParticipantId.newId(),
+                command.actingUser().id(),
+                command.actingUser().displayName(),
+                now,
+                command.referrerParticipantId());
         booking.join(participant, now);
 
         groupBookingRepository.save(booking);

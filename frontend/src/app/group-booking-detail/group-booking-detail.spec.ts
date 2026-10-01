@@ -40,7 +40,12 @@ describe('GroupBookingDetail', () => {
         { provide: GroupBookingService, useClass: TestGroupBookingService },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: 'booking-1' }) } },
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap({ id: 'booking-1' }),
+              queryParamMap: convertToParamMap({}),
+            },
+          },
         },
       ],
     }).compileComponents();
@@ -147,6 +152,65 @@ describe('GroupBookingDetail', () => {
     expect(compiled.querySelector('.waitlisted')).toBeFalsy();
   });
 
+  it('shows your discounted price and an invite link once you have joined via a referral', () => {
+    const fixture = TestBed.createComponent(GroupBookingDetail);
+    fixture.detectChanges();
+    flushBookingRefresh({
+      ...sampleBooking(),
+      myParticipantId: 'p1',
+      myPricePerSeat: 950,
+    });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Your price per seat');
+    expect(compiled.textContent).toContain('$50.00 off from referrals');
+    const input = compiled.querySelector('.invite input') as HTMLInputElement;
+    expect(input.value).toContain('/group-bookings/booking-1?ref=p1');
+  });
+
+  it('passes the ref query param through when joining via an invite link', async () => {
+    TestBed.resetTestingModule();
+    localStorage.setItem(
+      'agency-voyage:auth',
+      JSON.stringify({ token: 'fake-token', user: { id: 'u1', email: 'alice@example.com', displayName: 'Alice' } }),
+    );
+    await TestBed.configureTestingModule({
+      imports: [GroupBookingDetail],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: GroupBookingService, useClass: TestGroupBookingService },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap({ id: 'booking-1' }),
+              queryParamMap: convertToParamMap({ ref: 'p1' }),
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+    const refHttpMock = TestBed.inject(HttpTestingController);
+
+    const fixture = TestBed.createComponent(GroupBookingDetail);
+    fixture.detectChanges();
+    refHttpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1`).flush(sampleBooking());
+    refHttpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/audit-trail`).flush([]);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    (compiled.querySelector('.join button') as HTMLButtonElement).click();
+
+    const joinReq = refHttpMock.expectOne(`${API_BASE_URL}/api/group-bookings/booking-1/participants?ref=p1`);
+    expect(joinReq.request.method).toBe('POST');
+    joinReq.flush(sampleBooking());
+
+    refHttpMock.verify();
+  });
+
   it('shows the audit trail as a history timeline, newest first', () => {
     const fixture = TestBed.createComponent(GroupBookingDetail);
     fixture.detectChanges();
@@ -180,12 +244,13 @@ describe('GroupBookingDetail', () => {
       deadline: '2027-05-01T00:00:00Z',
       priceTiers: [{ minParticipants: 5, pricePerSeat: 800 }],
       participants: [
-        { id: 'p1', customerName: 'Alice', joinedAt: '2027-04-01T00:00:00Z' },
-        { id: 'p2', customerName: 'Bob', joinedAt: '2027-04-01T00:00:00Z' },
+        { id: 'p1', customerName: 'Alice', joinedAt: '2027-04-01T00:00:00Z', referredByParticipantId: null },
+        { id: 'p2', customerName: 'Bob', joinedAt: '2027-04-01T00:00:00Z', referredByParticipantId: null },
       ],
       myParticipantId: null,
       waitlist: [],
       myWaitlistEntryId: null,
+      myPricePerSeat: null,
     };
   }
 });

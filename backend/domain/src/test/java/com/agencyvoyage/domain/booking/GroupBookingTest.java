@@ -11,6 +11,7 @@ import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.DeadlineExpiredException;
 import com.agencyvoyage.domain.exception.FinalizationTooEarlyException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.exception.NotOnWaitlistException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PriceTier;
@@ -99,6 +100,78 @@ class GroupBookingTest {
 
         assertThatThrownBy(() -> booking.join(new Participant(ParticipantId.newId(), bobId, "Bob", NOW), NOW))
                 .isInstanceOf(AlreadyJoinedException.class);
+    }
+
+    @Test
+    void joiningViaAReferralDiscountsBothTheReferrerAndTheReferred() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        ParticipantId aliceId = booking.participants().get(0).id();
+
+        booking.join(new Participant(ParticipantId.newId(), UserId.newId(), "Bob", NOW, aliceId), NOW);
+        ParticipantId bobId = booking.participants().get(1).id();
+
+        BigDecimal tierPrice = booking.currentPricePerSeat();
+        assertThat(booking.pricePerSeatFor(aliceId))
+                .isEqualByComparingTo(tierPrice.subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+        assertThat(booking.pricePerSeatFor(bobId))
+                .isEqualByComparingTo(tierPrice.subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+    }
+
+    @Test
+    void referralDiscountsStackForMultipleSuccessfulReferrals() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        ParticipantId aliceId = booking.participants().get(0).id();
+
+        booking.join(new Participant(ParticipantId.newId(), UserId.newId(), "Bob", NOW, aliceId), NOW);
+        booking.join(new Participant(ParticipantId.newId(), UserId.newId(), "Carol", NOW, aliceId), NOW);
+
+        BigDecimal tierPrice = booking.currentPricePerSeat();
+        assertThat(booking.pricePerSeatFor(aliceId))
+                .isEqualByComparingTo(tierPrice.subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT.multiply(new BigDecimal("2"))));
+    }
+
+    @Test
+    void theReferralDiscountNeverTakesThePriceBelowZero() {
+        PricingSchedule cheapSchedule = PricingSchedule.of(new BigDecimal("30"), List.of(), 2);
+        Trip cheapTrip = new Trip(
+                TripId.newId(),
+                "Bali",
+                "10 days in Bali",
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 20),
+                1,
+                2,
+                NOW.plus(1, ChronoUnit.DAYS),
+                cheapSchedule);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), cheapTrip, participant("Alice", NOW), NOW);
+        ParticipantId aliceId = booking.participants().get(0).id();
+
+        booking.join(new Participant(ParticipantId.newId(), UserId.newId(), "Bob", NOW, aliceId), NOW);
+
+        assertThat(booking.pricePerSeatFor(aliceId)).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void anOrganicJoinerPaysTheFullTierPrice() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        booking.join(participant("Bob", NOW), NOW);
+        ParticipantId bobId = booking.participants().get(1).id();
+
+        assertThat(booking.pricePerSeatFor(bobId)).isEqualByComparingTo(booking.currentPricePerSeat());
+    }
+
+    @Test
+    void cannotJoinWithAReferrerWhoIsNotActuallyAParticipant() {
+        Trip trip = trip(NOW.plus(1, ChronoUnit.DAYS), 1, 5);
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", NOW), NOW);
+        ParticipantId strangerId = ParticipantId.newId();
+
+        assertThatThrownBy(() -> booking.join(
+                        new Participant(ParticipantId.newId(), UserId.newId(), "Bob", NOW, strangerId), NOW))
+                .isInstanceOf(InvalidReferralException.class);
     }
 
     @Test
