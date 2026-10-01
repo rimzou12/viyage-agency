@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
+import com.agencyvoyage.application.port.in.ConfirmHotelReservationCommand;
+import com.agencyvoyage.application.port.in.ConfirmHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
@@ -18,18 +20,23 @@ import com.agencyvoyage.application.port.in.LeaveGroupBookingCommand;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.LeaveWaitlistCommand;
 import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
+import com.agencyvoyage.application.port.in.RequestHotelReservationCommand;
+import com.agencyvoyage.application.port.in.RequestHotelReservationUseCase;
 import com.agencyvoyage.application.port.out.AuditEntry;
 import com.agencyvoyage.application.port.out.AuditEventType;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
+import com.agencyvoyage.domain.booking.HotelReservationStatus;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.booking.WaitlistEntry;
 import com.agencyvoyage.domain.booking.WaitlistEntryId;
 import com.agencyvoyage.domain.exception.AlreadyWaitlistedException;
+import com.agencyvoyage.domain.exception.BookingNotConfirmedException;
 import com.agencyvoyage.domain.exception.BookingNotFullException;
 import com.agencyvoyage.domain.exception.GroupFullException;
+import com.agencyvoyage.domain.exception.HotelReservationNotPendingException;
 import com.agencyvoyage.domain.exception.InvalidReferralException;
 import com.agencyvoyage.domain.exception.ParticipantNotInBookingException;
 import com.agencyvoyage.domain.trip.PricingSchedule;
@@ -88,6 +95,12 @@ class GroupBookingControllerTest {
 
     @MockitoBean
     private LeaveWaitlistUseCase leaveWaitlistUseCase;
+
+    @MockitoBean
+    private RequestHotelReservationUseCase requestHotelReservationUseCase;
+
+    @MockitoBean
+    private ConfirmHotelReservationUseCase confirmHotelReservationUseCase;
 
     /**
      * Not used directly by this controller, but JwtAuthenticationFilter is a servlet
@@ -284,6 +297,66 @@ class GroupBookingControllerTest {
                 .isEqualTo("OPEN");
     }
 
+    @Test
+    void requestHotelReservationReturnsTheUpdatedBookingAsJson() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        GroupBooking booking = booking(bookingId, ALICE.id());
+        when(requestHotelReservationUseCase.requestHotelReservation(any(RequestHotelReservationCommand.class)))
+                .thenReturn(booking);
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/hotel-reservation")
+                        .with(asAlice())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"reference\":\"REF-1\"}"))
+                .hasStatusOk();
+
+        verify(requestHotelReservationUseCase)
+                .requestHotelReservation(new RequestHotelReservationCommand(bookingId, "REF-1"));
+    }
+
+    @Test
+    void returns409WhenRequestingAHotelReservationForABookingThatIsNotConfirmed() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        when(requestHotelReservationUseCase.requestHotelReservation(any(RequestHotelReservationCommand.class)))
+                .thenThrow(new BookingNotConfirmedException(bookingId, GroupBookingStatus.OPEN));
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/hotel-reservation")
+                        .with(asAlice())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"reference\":\"REF-1\"}"))
+                .hasStatus(409);
+    }
+
+    @Test
+    void confirmHotelReservationReturnsTheUpdatedBookingAsJson() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        GroupBooking booking = booking(bookingId, ALICE.id());
+        when(confirmHotelReservationUseCase.confirmHotelReservation(any(ConfirmHotelReservationCommand.class)))
+                .thenReturn(booking);
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/hotel-reservation/confirm")
+                        .with(asAlice()))
+                .hasStatusOk();
+
+        verify(confirmHotelReservationUseCase)
+                .confirmHotelReservation(new ConfirmHotelReservationCommand(bookingId));
+    }
+
+    @Test
+    void returns409WhenConfirmingAHotelReservationThatIsNotPending() {
+        GroupBookingId bookingId = GroupBookingId.newId();
+        when(confirmHotelReservationUseCase.confirmHotelReservation(any(ConfirmHotelReservationCommand.class)))
+                .thenThrow(new HotelReservationNotPendingException(bookingId, HotelReservationStatus.NOT_REQUESTED));
+
+        assertThat(mvc.post()
+                        .uri("/api/group-bookings/" + bookingId + "/hotel-reservation/confirm")
+                        .with(asAlice()))
+                .hasStatus(409);
+    }
+
     private static org.springframework.test.web.servlet.request.RequestPostProcessor asAlice() {
         Authentication authentication = new UsernamePasswordAuthenticationToken(ALICE, null, List.of());
         return authentication(authentication);
@@ -311,7 +384,9 @@ class GroupBookingControllerTest {
                 schedule,
                 GroupBookingStatus.OPEN,
                 List.of(creator),
-                List.of());
+                List.of(),
+                HotelReservationStatus.NOT_REQUESTED,
+                null);
     }
 
     private static GroupBooking bookingWithAReferral(GroupBookingId id, UserId referrerUserId) {
@@ -338,7 +413,9 @@ class GroupBookingControllerTest {
                 schedule,
                 GroupBookingStatus.OPEN,
                 List.of(referrer, referred),
-                List.of());
+                List.of(),
+                HotelReservationStatus.NOT_REQUESTED,
+                null);
     }
 
     private static GroupBooking fullBookingWithOneWaitlisted(GroupBookingId id, UserId waitlistedUserId) {
@@ -365,6 +442,8 @@ class GroupBookingControllerTest {
                 schedule,
                 GroupBookingStatus.OPEN,
                 List.of(creator),
-                List.of(entry));
+                List.of(entry),
+                HotelReservationStatus.NOT_REQUESTED,
+                null);
     }
 }

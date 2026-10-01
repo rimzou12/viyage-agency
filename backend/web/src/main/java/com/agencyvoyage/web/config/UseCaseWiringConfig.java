@@ -1,5 +1,6 @@
 package com.agencyvoyage.web.config;
 
+import com.agencyvoyage.application.port.in.ConfirmHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.FinalizeGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
@@ -9,16 +10,22 @@ import com.agencyvoyage.application.port.in.JoinGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.JoinWaitlistUseCase;
 import com.agencyvoyage.application.port.in.LeaveGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.LeaveWaitlistUseCase;
+import com.agencyvoyage.application.port.in.ListContactMessagesUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.in.LoginUseCase;
 import com.agencyvoyage.application.port.in.RegisterUserUseCase;
+import com.agencyvoyage.application.port.in.RequestHotelReservationUseCase;
+import com.agencyvoyage.application.port.in.SendContactMessageUseCase;
 import com.agencyvoyage.application.port.out.AuditTrailRepository;
+import com.agencyvoyage.application.port.out.ContactMessageRepository;
+import com.agencyvoyage.application.port.out.EmailSender;
 import com.agencyvoyage.application.port.out.GroupBookingEventPublisher;
 import com.agencyvoyage.application.port.out.GroupBookingRepository;
 import com.agencyvoyage.application.port.out.PasswordHasher;
 import com.agencyvoyage.application.port.out.TokenIssuer;
 import com.agencyvoyage.application.port.out.TripRepository;
 import com.agencyvoyage.application.port.out.UserRepository;
+import com.agencyvoyage.application.service.ConfirmHotelReservationService;
 import com.agencyvoyage.application.service.CreateGroupBookingService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
 import com.agencyvoyage.application.service.GetAuditTrailService;
@@ -27,8 +34,11 @@ import com.agencyvoyage.application.service.JoinGroupBookingService;
 import com.agencyvoyage.application.service.JoinWaitlistService;
 import com.agencyvoyage.application.service.LeaveGroupBookingService;
 import com.agencyvoyage.application.service.LeaveWaitlistService;
+import com.agencyvoyage.application.service.ListContactMessagesService;
 import com.agencyvoyage.application.service.LoginService;
 import com.agencyvoyage.application.service.RegisterUserService;
+import com.agencyvoyage.application.service.RequestHotelReservationService;
+import com.agencyvoyage.application.service.SendContactMessageService;
 import com.agencyvoyage.application.service.TripQueryService;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
@@ -120,5 +130,34 @@ public class UseCaseWiringConfig {
     public LoginUseCase loginUseCase(
             UserRepository userRepository, PasswordHasher passwordHasher, TokenIssuer tokenIssuer) {
         return new LoginService(userRepository, passwordHasher, tokenIssuer);
+    }
+
+    @Bean
+    public RequestHotelReservationUseCase requestHotelReservationUseCase(
+            GroupBookingRepository groupBookingRepository,
+            UserRepository userRepository,
+            EmailSender emailSender,
+            Clock clock) {
+        return new RequestHotelReservationService(groupBookingRepository, userRepository, emailSender, clock);
+    }
+
+    @Bean
+    public ConfirmHotelReservationUseCase confirmHotelReservationUseCase(
+            GroupBookingRepository groupBookingRepository,
+            UserRepository userRepository,
+            EmailSender emailSender,
+            Clock clock) {
+        return new ConfirmHotelReservationService(groupBookingRepository, userRepository, emailSender, clock);
+    }
+
+    @Bean
+    public SendContactMessageUseCase sendContactMessageUseCase(
+            ContactMessageRepository contactMessageRepository, Clock clock) {
+        return new SendContactMessageService(contactMessageRepository, clock);
+    }
+
+    @Bean
+    public ListContactMessagesUseCase listContactMessagesUseCase(ContactMessageRepository contactMessageRepository) {
+        return new ListContactMessagesService(contactMessageRepository);
     }
 }

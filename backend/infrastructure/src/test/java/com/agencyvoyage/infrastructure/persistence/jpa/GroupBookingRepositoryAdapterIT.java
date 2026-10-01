@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.agencyvoyage.domain.booking.GroupBooking;
 import com.agencyvoyage.domain.booking.GroupBookingId;
 import com.agencyvoyage.domain.booking.GroupBookingStatus;
+import com.agencyvoyage.domain.booking.HotelReservationStatus;
 import com.agencyvoyage.domain.booking.Participant;
 import com.agencyvoyage.domain.booking.ParticipantId;
 import com.agencyvoyage.domain.booking.WaitlistEntry;
@@ -78,6 +79,30 @@ class GroupBookingRepositoryAdapterIT extends AbstractPostgresIT {
                 .isEqualByComparingTo(reloaded.currentPricePerSeat().subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
         assertThat(reloaded.pricePerSeatFor(bobId))
                 .isEqualByComparingTo(reloaded.currentPricePerSeat().subtract(GroupBooking.REFERRAL_DISCOUNT_PER_CREDIT));
+    }
+
+    @Test
+    void persistsAndReloadsAHotelReservation() {
+        Trip trip = fullTrip(Instant.now().plus(1, ChronoUnit.DAYS));
+        Instant now = Instant.now();
+        GroupBooking booking = GroupBooking.open(GroupBookingId.newId(), trip, participant("Alice", now), now);
+        adapter.save(booking);
+        booking.finalizeBooking(now.plus(2, ChronoUnit.DAYS));
+        adapter.save(booking);
+
+        booking.requestHotelReservation("REF-123", now);
+        adapter.save(booking);
+
+        GroupBooking reloadedAfterRequest = adapter.findById(booking.id()).orElseThrow();
+        assertThat(reloadedAfterRequest.hotelReservationStatus()).isEqualTo(HotelReservationStatus.PENDING);
+        assertThat(reloadedAfterRequest.hotelReservationReference()).isEqualTo("REF-123");
+
+        reloadedAfterRequest.confirmHotelReservation(now);
+        adapter.save(reloadedAfterRequest);
+
+        GroupBooking reloadedAfterConfirm = adapter.findById(booking.id()).orElseThrow();
+        assertThat(reloadedAfterConfirm.hotelReservationStatus()).isEqualTo(HotelReservationStatus.CONFIRMED);
+        assertThat(reloadedAfterConfirm.hotelReservationReference()).isEqualTo("REF-123");
     }
 
     @Test

@@ -3,6 +3,7 @@
   <span class="spacer"></span>
   <div class="account">
     @if (auth.isLoggedIn()) {
+      <a routerLink="/contact">Contact admin</a>
       <span class="hello">Hi, {{ auth.currentUser()?.displayName }}</span>
       <button mat-stroked-button type="button" (click)="logout()">
         <mat-icon>logout</mat-icon>
@@ -16,3 +17,23 @@
 </mat-toolbar>
 
 <router-outlet />
+
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <span class="brand gradient-text">Agency Voyage</span>
+      <p>Group trips, organized together.</p>
+    </div>
+    <div class="footer-contact">
+      <h3>Contact</h3>
+      <p><a href="mailto:support&#64;agencyvoyage.example">support&#64;agencyvoyage.example</a></p>
+      <p><a href="tel:+15551234567">+1 (555) 123-4567</a></p>
+      <p>123 Travel Street, San Francisco, CA</p>
+    </div>
+    <div class="footer-links">
+      <h3>Help</h3>
+      <a routerLink="/contact">Contact admin</a>
+    </div>
+  </div>
+  <p class="footer-copyright">&copy; {{ currentYear }} Agency Voyage. All rights reserved.</p>
+</footer>

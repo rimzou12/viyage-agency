@@ -15,6 +15,7 @@ import { AuthService } from './core/auth.service';
 export class App {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  protected readonly currentYear = new Date().getFullYear();
 
   protected logout(): void {
     this.auth.logout();

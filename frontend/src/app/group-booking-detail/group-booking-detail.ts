@@ -3,9 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { forkJoin, interval, merge, startWith, switchMap } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
@@ -17,7 +20,17 @@ const FALLBACK_POLL_MS = 20000;
 @Component({
   selector: 'app-group-booking-detail',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [
+    RouterLink,
+    CurrencyPipe,
+    DatePipe,
+    FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './group-booking-detail.html',
   styleUrl: './group-booking-detail.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,6 +57,11 @@ export class GroupBookingDetail {
   protected readonly joinWaitlistError = signal<string | null>(null);
   protected readonly leavingWaitlist = signal(false);
   protected readonly leaveWaitlistError = signal<string | null>(null);
+  protected readonly hotelReference = signal('');
+  protected readonly requestingReservation = signal(false);
+  protected readonly requestReservationError = signal<string | null>(null);
+  protected readonly confirmingReservation = signal(false);
+  protected readonly confirmReservationError = signal<string | null>(null);
 
   /** The server computes this from the auth token on every response, including GET. */
   protected readonly myParticipantId = computed(() => this.booking()?.myParticipantId ?? null);
@@ -171,6 +189,41 @@ export class GroupBookingDetail {
       error: (err: HttpErrorResponse) => {
         this.leavingWaitlist.set(false);
         this.leaveWaitlistError.set(apiErrorMessage(err, 'Could not leave the waitlist.'));
+      },
+    });
+  }
+
+  protected requestHotelReservation(): void {
+    const reference = this.hotelReference().trim();
+    if (!reference) {
+      return;
+    }
+    this.requestingReservation.set(true);
+    this.requestReservationError.set(null);
+    this.groupBookingService.requestHotelReservation(this.bookingId, reference).subscribe({
+      next: (booking) => {
+        this.booking.set(booking);
+        this.requestingReservation.set(false);
+        this.hotelReference.set('');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.requestingReservation.set(false);
+        this.requestReservationError.set(apiErrorMessage(err, 'Could not request the hotel reservation.'));
+      },
+    });
+  }
+
+  protected confirmHotelReservation(): void {
+    this.confirmingReservation.set(true);
+    this.confirmReservationError.set(null);
+    this.groupBookingService.confirmHotelReservation(this.bookingId).subscribe({
+      next: (booking) => {
+        this.booking.set(booking);
+        this.confirmingReservation.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.confirmingReservation.set(false);
+        this.confirmReservationError.set(apiErrorMessage(err, 'Could not confirm the hotel reservation.'));
       },
     });
   }
