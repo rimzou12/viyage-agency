@@ -24,10 +24,11 @@ public class ContactMessageRepositoryAdapter implements ContactMessageRepository
     public void save(ContactMessage message) {
         springDataRepository.save(new ContactMessageJpaEntity(
                 message.id().value(),
+                message.conversationUserId().value(),
                 message.authorUserId().value(),
                 message.authorName(),
                 message.authorEmail(),
-                message.subject(),
+                message.fromAdmin(),
                 message.message(),
                 message.sentAt()));
     }
@@ -39,13 +40,23 @@ public class ContactMessageRepositoryAdapter implements ContactMessageRepository
                 .toList();
     }
 
+    @Override
+    public List<ContactMessage> findByConversationUserId(UserId conversationUserId) {
+        return springDataRepository
+                .findByConversationUserIdOrderBySentAtAsc(conversationUserId.value())
+                .stream()
+                .map(ContactMessageRepositoryAdapter::toDomain)
+                .toList();
+    }
+
     private static ContactMessage toDomain(ContactMessageJpaEntity entity) {
         return new ContactMessage(
                 new ContactMessageId(entity.getId()),
+                new UserId(entity.getConversationUserId()),
                 new UserId(entity.getAuthorUserId()),
                 entity.getAuthorName(),
                 entity.getAuthorEmail(),
-                entity.getSubject(),
+                entity.isFromAdmin(),
                 entity.getMessage(),
                 entity.getSentAt());
     }

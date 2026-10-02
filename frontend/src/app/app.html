@@ -5,8 +5,6 @@
     @if (auth.isLoggedIn()) {
       @if (auth.currentUser()?.isAdmin) {
         <a routerLink="/admin">Admin dashboard</a>
-      } @else {
-        <a routerLink="/contact">Contact admin</a>
       }
       <span class="hello">Hi, {{ auth.currentUser()?.displayName }}</span>
       <button mat-stroked-button type="button" (click)="logout()">
@@ -34,10 +32,10 @@
       <p><a href="tel:+15551234567">+1 (555) 123-4567</a></p>
       <p>123 Travel Street, San Francisco, CA</p>
     </div>
-    <div class="footer-links">
-      <h3>Help</h3>
-      <a routerLink="/contact">Contact admin</a>
-    </div>
   </div>
   <p class="footer-copyright">&copy; {{ currentYear }} Agency Voyage. All rights reserved.</p>
 </footer>
+
+@if (auth.isLoggedIn()) {
+  <app-chat-widget />
+}

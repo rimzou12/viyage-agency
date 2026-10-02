@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SpringDataContactMessageJpaRepository extends JpaRepository<ContactMessageJpaEntity, UUID> {
 
     List<ContactMessageJpaEntity> findAllByOrderBySentAtDesc();
+
+    List<ContactMessageJpaEntity> findByConversationUserIdOrderBySentAtAsc(UUID conversationUserId);
 }

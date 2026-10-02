@@ -38,19 +38,19 @@ class SendContactMessageServiceTest {
     }
 
     @Test
-    void savesAMessageAuthoredByTheCaller() {
+    void savesAMessageAuthoredByTheCallerAsTheStartOfTheirOwnConversation() {
         User alice = new User(UserId.newId(), "alice@example.com", "Alice");
 
-        ContactMessage result =
-                service.sendMessage(new SendContactMessageCommand(alice, "Help", "Where is my seat?"));
+        ContactMessage result = service.sendMessage(new SendContactMessageCommand(alice, "Where is my seat?"));
 
         verify(contactMessageRepository).save(messageCaptor.capture());
         ContactMessage saved = messageCaptor.getValue();
         assertThat(saved).isEqualTo(result);
+        assertThat(saved.conversationUserId()).isEqualTo(alice.id());
         assertThat(saved.authorUserId()).isEqualTo(alice.id());
         assertThat(saved.authorName()).isEqualTo("Alice");
         assertThat(saved.authorEmail()).isEqualTo("alice@example.com");
-        assertThat(saved.subject()).isEqualTo("Help");
+        assertThat(saved.fromAdmin()).isFalse();
         assertThat(saved.message()).isEqualTo("Where is my seat?");
         assertThat(saved.sentAt()).isEqualTo(NOW);
     }

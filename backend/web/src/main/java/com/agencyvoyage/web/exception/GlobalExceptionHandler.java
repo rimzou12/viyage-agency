@@ -1,5 +1,6 @@
 package com.agencyvoyage.web.exception;
 
+import com.agencyvoyage.application.exception.ConversationAccessDeniedException;
 import com.agencyvoyage.application.exception.EmailAlreadyRegisteredException;
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
 import com.agencyvoyage.application.exception.HotelNotFoundException;
@@ -34,6 +35,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotAnAdminException.class)
     public ResponseEntity<ErrorResponse> handleNotAnAdmin(NotAnAdminException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConversationAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleConversationAccessDenied(ConversationAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
     }
 

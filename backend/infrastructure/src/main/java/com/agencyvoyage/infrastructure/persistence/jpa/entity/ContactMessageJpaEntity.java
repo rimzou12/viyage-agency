@@ -14,6 +14,9 @@ public class ContactMessageJpaEntity {
     @Id
     private UUID id;
 
+    @Column(name = "conversation_user_id", nullable = false)
+    private UUID conversationUserId;
+
     @Column(name = "author_user_id", nullable = false)
     private UUID authorUserId;
 
@@ -23,8 +26,8 @@ public class ContactMessageJpaEntity {
     @Column(name = "author_email", nullable = false)
     private String authorEmail;
 
-    @Column(nullable = false)
-    private String subject;
+    @Column(name = "from_admin", nullable = false)
+    private boolean fromAdmin;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
@@ -38,23 +41,29 @@ public class ContactMessageJpaEntity {
 
     public ContactMessageJpaEntity(
             UUID id,
+            UUID conversationUserId,
             UUID authorUserId,
             String authorName,
             String authorEmail,
-            String subject,
+            boolean fromAdmin,
             String message,
             Instant sentAt) {
         this.id = id;
+        this.conversationUserId = conversationUserId;
         this.authorUserId = authorUserId;
         this.authorName = authorName;
         this.authorEmail = authorEmail;
-        this.subject = subject;
+        this.fromAdmin = fromAdmin;
         this.message = message;
         this.sentAt = sentAt;
     }
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getConversationUserId() {
+        return conversationUserId;
     }
 
     public UUID getAuthorUserId() {
@@ -69,8 +78,8 @@ public class ContactMessageJpaEntity {
         return authorEmail;
     }
 
-    public String getSubject() {
-        return subject;
+    public boolean isFromAdmin() {
+        return fromAdmin;
     }
 
     public String getMessage() {

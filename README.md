@@ -130,8 +130,15 @@ Reframing the kata's original group-purchase stories for trips:
   reservation reference for it (`PENDING`), then confirm that reservation
   (`CONFIRMED`) - confirming emails every participant their confirmation, and
   requesting emails them too, letting them know a reservation is pending.
-- Any logged-in user can send the admin a message (subject + text) from the Contact
-  Admin page; any logged-in user can read the inbox back.
+- Any logged-in user can chat with the admin via a floating chat widget available on
+  every page. Each customer has one ongoing thread with the admin (`ContactMessage`
+  rows share a `conversationUserId` - always the customer's id - while
+  `authorUserId`/`fromAdmin` track who actually wrote each message); a customer can
+  only read and send into their own thread. An admin instead sees a list of every open
+  conversation, newest activity first, and can open any one of them to reply - only an
+  admin may list every conversation or reply as the admin (`403` otherwise). The widget
+  polls every 5s while open to pick up the other side's replies; there is no AI
+  involved, it is a plain human-to-admin messaging UI.
 - An admin can create, edit and delete trips in the catalog (destination, dates,
   participant limits, booking deadline, pricing tiers) and curate a hotel catalog per
   trip (name, description, photo URLs - add, edit, delete) from a dedicated `/admin`
@@ -139,9 +146,7 @@ Reframing the kata's original group-purchase stories for trips:
   change either. Deleting a trip or hotel asks for confirmation first and can't be
   undone; deleting a trip doesn't touch any group bookings already made for it (no
   foreign-key link from booking to trip - see Simplifications).
-  Logging in as an admin goes straight to the dashboard instead of the trip list, and
-  the dashboard replaces the "Contact admin" link in the header (an admin doesn't need
-  to message themselves).
+  Logging in as an admin goes straight to the dashboard instead of the trip list.
 - The trip catalog can be searched by name/description and filtered to trips running on
   a chosen date (i.e. that date falls within the trip's departure-return window); both
   filters combine and update the list live as you type or pick a date.
@@ -191,8 +196,10 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/group-bookings/{bookingId}/audit-trail` | -    | Full history (joins/leaves/finalization), oldest first |
 | POST   | `/api/group-bookings/{bookingId}/hotel-reservation` | required | Record a hotel reservation reference (`{reference}`) for a `CONFIRMED` booking → `PENDING`. Emails every participant |
 | POST   | `/api/group-bookings/{bookingId}/hotel-reservation/confirm` | required | Confirm a `PENDING` reservation → `CONFIRMED`. Emails every participant |
-| POST   | `/api/contact-messages`                   | required | Send the admin a message (`{subject, message}`) |
-| GET    | `/api/contact-messages`                   | required | List every contact message, newest first |
+| POST   | `/api/contact-messages`                   | required | Send a message as the caller, starting or continuing their own thread with the admin (`{message}`) |
+| POST   | `/api/contact-messages/reply`             | admin only | Reply into a customer's thread (`{conversationUserId, message}`) - `403` for a non-admin |
+| GET    | `/api/contact-messages/conversations/{userId}` | required | Get one thread, oldest first - the thread's own customer or any admin, `403` otherwise |
+| GET    | `/api/contact-messages`                   | admin only | List every message across every conversation, newest first - `403` for a non-admin |
 | GET    | `/api/trips/{tripId}/hotels`              | -    | List the hotel catalog for a trip |
 | POST   | `/api/trips/{tripId}/hotels`              | admin only | Add a hotel to a trip's catalog (`{name, description, photoUrls}`) - `403` for a non-admin |
 | PUT    | `/api/trips/{tripId}/hotels/{hotelId}`    | admin only | Edit a hotel (same body as `POST`) - `403` for a non-admin, `404` if unknown |
@@ -265,7 +272,7 @@ into by this work - branches are merged in by hand, in order:
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
 `join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme` →
-`dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel`
+`dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel` → `admin-chat-widget`
 
 ## Simplifications and next steps
 
@@ -313,12 +320,12 @@ Documented deliberately, not accidentally missed:
   (discounts stack indefinitely, floored at a $0 seat) and no check for collusion (two
   accounts referring each other back and forth). Fine for an MVP demonstrating the
   mechanic, not for production.
-- **Hotel reservations and the contact-admin inbox aren't gated by the admin role.**
-  Confirming a hotel reservation and reading the contact-message inbox are open to any
-  logged-in user, not just admins - these predate `isAdmin` and were deliberately kept
-  as a simplification (the user explicitly chose "any logged-in user" over building a
-  full admin inbox). Only the hotel *catalog* (`POST /api/trips/{tripId}/hotels`) is
-  actually admin-gated.
+- **Hotel reservations aren't gated by the admin role.** Confirming a hotel
+  reservation is open to any logged-in user, not just admins - this predates `isAdmin`
+  and was deliberately kept as a simplification. The contact-message/chat-widget
+  endpoints *are* fully admin-gated now (a customer only sees their own thread, only an
+  admin can list every conversation or reply into one), as is the hotel *catalog*
+  (`POST /api/trips/{tripId}/hotels`).
 - **All transactional emails are simulated, like Kafka notifications.**
   `LoggingEmailSender` logs what would be sent (join confirmation, hotel reservation
   requested/confirmed) instead of calling a real provider - the same simplification

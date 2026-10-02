@@ -1,3 +1,3 @@
 package com.agencyvoyage.web.dto;
 
-public record SendContactMessageRequest(String subject, String message) {}
+public record SendContactMessageRequest(String message) {}

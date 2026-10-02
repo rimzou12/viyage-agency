@@ -4,9 +4,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from './core/auth.service';
+import { ChatWidget } from './chat-widget/chat-widget';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule],
+  imports: [RouterOutlet, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, ChatWidget],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',

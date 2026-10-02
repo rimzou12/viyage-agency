@@ -93,9 +93,10 @@ export interface Hotel {
 
 export interface ContactMessage {
   id: string;
+  conversationUserId: string;
   authorName: string;
   authorEmail: string;
-  subject: string;
+  fromAdmin: boolean;
   message: string;
   sentAt: string;
 }
