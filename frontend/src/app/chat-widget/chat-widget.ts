@@ -40,6 +40,7 @@ export class ChatWidget {
 
   protected readonly conversations = signal<ConversationSummary[]>([]);
   protected readonly selectedConversationUserId = signal<string | null>(null);
+  protected readonly selectedConversationCustomerName = signal<string | null>(null);
   protected readonly messages = signal<ContactMessage[]>([]);
   protected readonly loadingMessages = signal(false);
 
@@ -62,11 +63,15 @@ export class ChatWidget {
 
   protected selectConversation(userId: string): void {
     this.selectedConversationUserId.set(userId);
+    this.selectedConversationCustomerName.set(
+      this.conversations().find((c) => c.conversationUserId === userId)?.customerName ?? null,
+    );
     this.refreshMessages();
   }
 
   protected backToConversationList(): void {
     this.selectedConversationUserId.set(null);
+    this.selectedConversationCustomerName.set(null);
     this.messages.set([]);
   }
 
