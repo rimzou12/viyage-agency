@@ -36,11 +36,18 @@ html {
   --glow-tertiary: color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
   --glass-surface: color-mix(in srgb, #15121c 82%, transparent);
   --glass-border: color-mix(in srgb, var(--mat-sys-primary) 22%, var(--mat-sys-outline) 35%);
+  // Deliberately stays within the blue family (primary's pale dark-theme tone
+  // through to inverse-primary's much more saturated one) rather than
+  // crossing into tertiary - blending blue straight into yellow always drifts
+  // through a sickly olive/green on the way, no matter which two hues the
+  // theme uses. Tertiary stays reserved for small, solid (never-blended)
+  // accents elsewhere - status dots, badges - where it reads as a clean
+  // highlight instead of a muddy in-between.
   --gradient-aurora: linear-gradient(
     135deg,
     var(--mat-sys-primary) 0%,
-    var(--mat-sys-tertiary) 55%,
-    var(--mat-sys-secondary) 100%
+    var(--mat-sys-inverse-primary) 50%,
+    var(--mat-sys-primary) 100%
   );
   --ease-swift: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -210,4 +217,10 @@ a {
 .mat-mdc-unelevated-button:not(:disabled) {
   background-image: var(--gradient-aurora) !important;
   box-shadow: 0 8px 24px var(--glow-primary) !important;
+  // The gradient now runs pale-blue -> vivid blue -> pale-blue; Material's
+  // own text color (picked for whatever semantic color/no-color the button
+  // was given) doesn't reliably contrast against that, so it's pinned to
+  // white with a soft dark shadow for legibility against the pale end too.
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
