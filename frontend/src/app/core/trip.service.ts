@@ -37,4 +37,9 @@ export class TripService {
   updateTrip(tripId: string, trip: TripInput): Observable<Trip> {
     return this.http.put<Trip>(`${API_BASE_URL}/api/trips/${tripId}`, trip);
   }
+
+  /** Requires the caller to be an admin - the auth interceptor attaches the token. */
+  deleteTrip(tripId: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE_URL}/api/trips/${tripId}`);
+  }
 }

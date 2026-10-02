@@ -31,4 +31,9 @@ export class HotelService {
       photoUrls,
     });
   }
+
+  /** Requires the caller to be an admin - the auth interceptor attaches the token. */
+  deleteHotel(tripId: string, hotelId: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE_URL}/api/trips/${tripId}/hotels/${hotelId}`);
+  }
 }

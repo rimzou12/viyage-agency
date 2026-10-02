@@ -33,4 +33,9 @@ public class TripRepositoryAdapter implements TripRepository {
     public List<Trip> findAll() {
         return springDataRepository.findAll().stream().map(TripMapper::toDomain).toList();
     }
+
+    @Override
+    public void deleteById(TripId id) {
+        springDataRepository.deleteById(id.value());
+    }
 }

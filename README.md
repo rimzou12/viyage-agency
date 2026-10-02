@@ -132,10 +132,13 @@ Reframing the kata's original group-purchase stories for trips:
   requesting emails them too, letting them know a reservation is pending.
 - Any logged-in user can send the admin a message (subject + text) from the Contact
   Admin page; any logged-in user can read the inbox back.
-- An admin can create and edit the trip catalog itself (destination, dates,
+- An admin can create, edit and delete trips in the catalog (destination, dates,
   participant limits, booking deadline, pricing tiers) and curate a hotel catalog per
-  trip (name, description, photo URLs) from a dedicated `/admin` dashboard - trips and
-  hotels are visible to everyone browsing, but only an admin can add or edit either.
+  trip (name, description, photo URLs - add, edit, delete) from a dedicated `/admin`
+  dashboard - trips and hotels are visible to everyone browsing, but only an admin can
+  change either. Deleting a trip or hotel asks for confirmation first and can't be
+  undone; deleting a trip doesn't touch any group bookings already made for it (no
+  foreign-key link from booking to trip - see Simplifications).
   Logging in as an admin goes straight to the dashboard instead of the trip list, and
   the dashboard replaces the "Contact admin" link in the header (an admin doesn't need
   to message themselves).
@@ -177,6 +180,7 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/trips/{tripId}`                     | -    | Get one trip                          |
 | POST   | `/api/trips`                              | admin only | Add a trip to the catalog (same body shape as `PUT`) - `403` for a non-admin |
 | PUT    | `/api/trips/{tripId}`                     | admin only | Edit a trip (`{destination, description, departureDate, returnDate, minParticipants, maxParticipants, bookingDeadline, basePrice, priceTiers}`) - `403` for a non-admin, `404` if unknown |
+| DELETE | `/api/trips/{tripId}`                     | admin only | Remove a trip from the catalog - `403` for a non-admin, `404` if unknown |
 | POST   | `/api/trips/{tripId}/group-bookings`      | required | Start a group booking as the caller |
 | POST   | `/api/group-bookings/{bookingId}/participants` | required | Join a group booking as the caller (`?ref={participantId}` credits a referral discount to both sides) |
 | DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller (auto-promotes the next waitlisted person, if any) |
@@ -192,6 +196,7 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/trips/{tripId}/hotels`              | -    | List the hotel catalog for a trip |
 | POST   | `/api/trips/{tripId}/hotels`              | admin only | Add a hotel to a trip's catalog (`{name, description, photoUrls}`) - `403` for a non-admin |
 | PUT    | `/api/trips/{tripId}/hotels/{hotelId}`    | admin only | Edit a hotel (same body as `POST`) - `403` for a non-admin, `404` if unknown |
+| DELETE | `/api/trips/{tripId}/hotels/{hotelId}`    | admin only | Remove a hotel from a trip's catalog - `403` for a non-admin, `404` if unknown |
 
 Authenticated requests send `Authorization: Bearer <token>`, a JWT (HS256) returned by
 register/login. Its secret and expiration are configured via
@@ -260,7 +265,7 @@ into by this work - branches are merged in by hand, in order:
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
 `join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme` →
-`dark-mode-redesign` → `light-theme` → `admin-dashboard`
+`dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel`
 
 ## Simplifications and next steps
 
@@ -321,5 +326,12 @@ Documented deliberately, not accidentally missed:
 - **Hotel catalog photos are plain URLs, not an upload flow.** Same simplification as
   trip photos: an admin pastes image URLs when adding a hotel - no file upload or
   object storage.
+- **Deleting a trip doesn't check for existing group bookings.** There's no
+  foreign-key link from `group_booking` to `trip` (a booking captures the trip's
+  min/max/deadline/pricing at the moment it opens, not a live reference - see
+  `GroupBooking`'s own docs), so deleting a trip that already has bookings leaves them
+  pointing at a now-missing trip id rather than being blocked or cascade-deleted. Fine
+  for an MVP; a production version would need to either block the delete when bookings
+  exist or archive the trip instead of removing it.
 - **Further bonus ideas from the original brainstorm** not built here: multi-currency
   pricing.

@@ -12,4 +12,6 @@ public interface TripRepository {
     Optional<Trip> findById(TripId id);
 
     List<Trip> findAll();
+
+    void deleteById(TripId id);
 }

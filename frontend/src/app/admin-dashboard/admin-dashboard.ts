@@ -81,6 +81,9 @@ export class AdminDashboard implements OnInit {
   protected readonly savingTrip = signal(false);
   protected readonly tripFormError = signal<string | null>(null);
 
+  protected readonly deletingTripId = signal<string | null>(null);
+  protected readonly deleteTripError = signal<string | null>(null);
+
   // Hotel management, scoped to at most one expanded trip at a time.
   protected readonly expandedTripId = signal<string | null>(null);
   protected readonly hotels = signal<Hotel[]>([]);
@@ -89,6 +92,8 @@ export class AdminDashboard implements OnInit {
   protected readonly hotelForm = signal<HotelFormState>({ ...BLANK_HOTEL_FORM });
   protected readonly savingHotel = signal(false);
   protected readonly hotelFormError = signal<string | null>(null);
+  protected readonly deletingHotelId = signal<string | null>(null);
+  protected readonly deleteHotelError = signal<string | null>(null);
 
   ngOnInit(): void {
     if (!this.auth.currentUser()?.isAdmin) {
@@ -178,6 +183,30 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  protected deleteTrip(trip: Trip): void {
+    if (!confirm(`Delete "${trip.destination}"? This cannot be undone.`)) {
+      return;
+    }
+    this.deletingTripId.set(trip.id);
+    this.deleteTripError.set(null);
+    this.tripService.deleteTrip(trip.id).subscribe({
+      next: () => {
+        this.deletingTripId.set(null);
+        if (this.expandedTripId() === trip.id) {
+          this.expandedTripId.set(null);
+        }
+        if (this.editingTripId() === trip.id) {
+          this.cancelTripForm();
+        }
+        this.refreshTrips();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.deletingTripId.set(null);
+        this.deleteTripError.set(apiErrorMessage(err, 'Could not delete this trip.'));
+      },
+    });
+  }
+
   // --- Hotel management ---
 
   protected toggleHotels(trip: Trip): void {
@@ -251,6 +280,28 @@ export class AdminDashboard implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.savingHotel.set(false);
         this.hotelFormError.set(apiErrorMessage(err, 'Could not save this hotel.'));
+      },
+    });
+  }
+
+  protected deleteHotel(hotel: Hotel): void {
+    const tripId = this.expandedTripId();
+    if (!tripId || !confirm(`Delete "${hotel.name}"? This cannot be undone.`)) {
+      return;
+    }
+    this.deletingHotelId.set(hotel.id);
+    this.deleteHotelError.set(null);
+    this.hotelService.deleteHotel(tripId, hotel.id).subscribe({
+      next: () => {
+        this.deletingHotelId.set(null);
+        if (this.editingHotelId() === hotel.id) {
+          this.cancelHotelForm();
+        }
+        this.refreshHotels(tripId);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.deletingHotelId.set(null);
+        this.deleteHotelError.set(apiErrorMessage(err, 'Could not delete this hotel.'));
       },
     });
   }

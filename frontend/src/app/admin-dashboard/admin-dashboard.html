@@ -17,6 +17,10 @@
       </button>
     }
 
+    @if (deleteTripError()) {
+      <p class="error">{{ deleteTripError() }}</p>
+    }
+
     @if (showTripForm(); as show) {
       <form class="trip-form glass-panel" (submit)="$event.preventDefault(); submitTripForm()">
         <h2>{{ editingTripId() ? 'Edit trip' : 'Add a trip' }}</h2>
@@ -157,6 +161,16 @@
                 <mat-icon>hotel</mat-icon>
                 {{ expandedTripId() === trip.id ? 'Hide hotels' : 'Manage hotels' }}
               </button>
+              <button
+                mat-stroked-button
+                type="button"
+                class="danger"
+                [disabled]="deletingTripId() === trip.id"
+                (click)="deleteTrip(trip)"
+              >
+                <mat-icon>delete</mat-icon>
+                {{ deletingTripId() === trip.id ? 'Deleting...' : 'Delete' }}
+              </button>
             </div>
           </div>
 
@@ -173,15 +187,30 @@
                           <strong>{{ hotel.name }}</strong>
                           <p>{{ hotel.description }}</p>
                         </div>
-                        <button mat-stroked-button type="button" (click)="startEditingHotel(hotel)">
-                          <mat-icon>edit</mat-icon>
-                          Edit
-                        </button>
+                        <div class="hotel-actions">
+                          <button mat-stroked-button type="button" (click)="startEditingHotel(hotel)">
+                            <mat-icon>edit</mat-icon>
+                            Edit
+                          </button>
+                          <button
+                            mat-stroked-button
+                            type="button"
+                            class="danger"
+                            [disabled]="deletingHotelId() === hotel.id"
+                            (click)="deleteHotel(hotel)"
+                          >
+                            <mat-icon>delete</mat-icon>
+                            {{ deletingHotelId() === hotel.id ? 'Deleting...' : 'Delete' }}
+                          </button>
+                        </div>
                       </li>
                     }
                   </ul>
                 } @else {
                   <p class="hint">No hotels added for this trip yet.</p>
+                }
+                @if (deleteHotelError()) {
+                  <p class="error">{{ deleteHotelError() }}</p>
                 }
               }
 
