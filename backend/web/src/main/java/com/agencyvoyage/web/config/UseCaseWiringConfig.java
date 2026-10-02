@@ -3,6 +3,7 @@ package com.agencyvoyage.web.config;
 import com.agencyvoyage.application.port.in.AddHotelUseCase;
 import com.agencyvoyage.application.port.in.ConfirmHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
+import com.agencyvoyage.application.port.in.CreateTripUseCase;
 import com.agencyvoyage.application.port.in.FinalizeGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
@@ -18,6 +19,8 @@ import com.agencyvoyage.application.port.in.LoginUseCase;
 import com.agencyvoyage.application.port.in.RegisterUserUseCase;
 import com.agencyvoyage.application.port.in.RequestHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.SendContactMessageUseCase;
+import com.agencyvoyage.application.port.in.UpdateHotelUseCase;
+import com.agencyvoyage.application.port.in.UpdateTripUseCase;
 import com.agencyvoyage.application.port.out.AuditTrailRepository;
 import com.agencyvoyage.application.port.out.ContactMessageRepository;
 import com.agencyvoyage.application.port.out.EmailSender;
@@ -31,6 +34,7 @@ import com.agencyvoyage.application.port.out.UserRepository;
 import com.agencyvoyage.application.service.AddHotelService;
 import com.agencyvoyage.application.service.ConfirmHotelReservationService;
 import com.agencyvoyage.application.service.CreateGroupBookingService;
+import com.agencyvoyage.application.service.CreateTripService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
 import com.agencyvoyage.application.service.GetAuditTrailService;
 import com.agencyvoyage.application.service.GetGroupBookingService;
@@ -45,6 +49,8 @@ import com.agencyvoyage.application.service.RegisterUserService;
 import com.agencyvoyage.application.service.RequestHotelReservationService;
 import com.agencyvoyage.application.service.SendContactMessageService;
 import com.agencyvoyage.application.service.TripQueryService;
+import com.agencyvoyage.application.service.UpdateHotelService;
+import com.agencyvoyage.application.service.UpdateTripService;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -177,5 +183,20 @@ public class UseCaseWiringConfig {
     @Bean
     public ListHotelsForTripUseCase listHotelsForTripUseCase(HotelRepository hotelRepository) {
         return new ListHotelsForTripService(hotelRepository);
+    }
+
+    @Bean
+    public UpdateHotelUseCase updateHotelUseCase(HotelRepository hotelRepository) {
+        return new UpdateHotelService(hotelRepository);
+    }
+
+    @Bean
+    public CreateTripUseCase createTripUseCase(TripRepository tripRepository) {
+        return new CreateTripService(tripRepository);
+    }
+
+    @Bean
+    public UpdateTripUseCase updateTripUseCase(TripRepository tripRepository) {
+        return new UpdateTripService(tripRepository);
     }
 }

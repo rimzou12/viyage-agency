@@ -31,7 +31,8 @@ export class Login {
     this.error.set(null);
     this.auth.login(email.trim(), password).subscribe({
       next: () => {
-        const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo') ?? '/';
+        const explicitRedirect = this.route.snapshot.queryParamMap.get('redirectTo');
+        const redirectTo = explicitRedirect ?? (this.auth.currentUser()?.isAdmin ? '/admin' : '/');
         this.router.navigateByUrl(redirectTo);
       },
       error: (err: HttpErrorResponse) => {

@@ -16,4 +16,19 @@ export class HotelService {
   addHotel(tripId: string, name: string, description: string, photoUrls: string[]): Observable<Hotel> {
     return this.http.post<Hotel>(`${API_BASE_URL}/api/trips/${tripId}/hotels`, { name, description, photoUrls });
   }
+
+  /** Requires the caller to be an admin - the auth interceptor attaches the token. */
+  updateHotel(
+    tripId: string,
+    hotelId: string,
+    name: string,
+    description: string,
+    photoUrls: string[],
+  ): Observable<Hotel> {
+    return this.http.put<Hotel>(`${API_BASE_URL}/api/trips/${tripId}/hotels/${hotelId}`, {
+      name,
+      description,
+      photoUrls,
+    });
+  }
 }

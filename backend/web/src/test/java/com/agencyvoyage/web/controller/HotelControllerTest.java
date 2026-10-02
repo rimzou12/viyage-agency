@@ -6,10 +6,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
+import com.agencyvoyage.application.exception.HotelNotFoundException;
 import com.agencyvoyage.application.exception.NotAnAdminException;
 import com.agencyvoyage.application.port.in.AddHotelCommand;
 import com.agencyvoyage.application.port.in.AddHotelUseCase;
 import com.agencyvoyage.application.port.in.ListHotelsForTripUseCase;
+import com.agencyvoyage.application.port.in.UpdateHotelCommand;
+import com.agencyvoyage.application.port.in.UpdateHotelUseCase;
 import com.agencyvoyage.domain.hotel.Hotel;
 import com.agencyvoyage.domain.hotel.HotelId;
 import com.agencyvoyage.domain.trip.TripId;
@@ -44,6 +47,9 @@ class HotelControllerTest {
 
     @MockitoBean
     private ListHotelsForTripUseCase listHotelsForTripUseCase;
+
+    @MockitoBean
+    private UpdateHotelUseCase updateHotelUseCase;
 
     /**
      * Not used by HotelController, but JwtAuthenticationFilter is a servlet Filter, so
@@ -105,6 +111,39 @@ class HotelControllerTest {
                 .bodyJson()
                 .extractingPath("$[0].name")
                 .isEqualTo("Ubud Retreat");
+    }
+
+    @Test
+    void anAdminCanUpdateAHotel() {
+        TripId tripId = TripId.newId();
+        HotelId hotelId = HotelId.newId();
+        Hotel updated = new Hotel(hotelId, tripId, "Renamed Retreat", "Updated views", List.of());
+        when(updateHotelUseCase.updateHotel(any(UpdateHotelCommand.class))).thenReturn(updated);
+
+        assertThat(mvc.put()
+                        .uri("/api/trips/" + tripId + "/hotels/" + hotelId)
+                        .with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Renamed Retreat\",\"description\":\"Updated views\",\"photoUrls\":[]}"))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.name")
+                .isEqualTo("Renamed Retreat");
+    }
+
+    @Test
+    void returns404WhenUpdatingAHotelThatDoesNotExist() {
+        TripId tripId = TripId.newId();
+        HotelId unknownId = HotelId.newId();
+        when(updateHotelUseCase.updateHotel(any(UpdateHotelCommand.class)))
+                .thenThrow(new HotelNotFoundException(unknownId));
+
+        assertThat(mvc.put()
+                        .uri("/api/trips/" + tripId + "/hotels/" + unknownId)
+                        .with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Renamed\",\"description\":\"Updated\",\"photoUrls\":[]}"))
+                .hasStatus(404);
     }
 
     private static org.springframework.test.web.servlet.request.RequestPostProcessor asAdmin() {

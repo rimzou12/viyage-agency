@@ -177,31 +177,4 @@ h1 {
     }
   }
 
-  .add-hotel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--glass-border);
-
-    h3 {
-      margin: 0 0 0.75rem;
-      font-size: 0.95rem;
-      font-weight: 700;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    button {
-      margin-top: 0.5rem;
-      align-self: flex-start;
-    }
-
-    .error {
-      margin-top: 0.75rem;
-      font-size: 0.85rem;
-    }
-  }
 }

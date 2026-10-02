@@ -3,7 +3,11 @@
   <span class="spacer"></span>
   <div class="account">
     @if (auth.isLoggedIn()) {
-      <a routerLink="/contact">Contact admin</a>
+      @if (auth.currentUser()?.isAdmin) {
+        <a routerLink="/admin">Admin dashboard</a>
+      } @else {
+        <a routerLink="/contact">Contact admin</a>
+      }
       <span class="hello">Hi, {{ auth.currentUser()?.displayName }}</span>
       <button mat-stroked-button type="button" (click)="logout()">
         <mat-icon>logout</mat-icon>

@@ -46,6 +46,22 @@ class HotelRepositoryAdapterIT extends AbstractPostgresIT {
     }
 
     @Test
+    void saveUpdatesAnExistingHotelAndReplacesItsPhotos() {
+        TripId tripId = TripId.newId();
+        Hotel hotel = new Hotel(HotelId.newId(), tripId, "Ubud Retreat", "Jungle views", List.of("https://x/a.jpg"));
+        adapter.save(hotel);
+
+        Hotel updated = new Hotel(
+                hotel.id(), tripId, "Renamed Retreat", "Updated views", List.of("https://x/new.jpg"));
+        adapter.save(updated);
+
+        Hotel reloaded = adapter.findById(hotel.id()).orElseThrow();
+        assertThat(reloaded.name()).isEqualTo("Renamed Retreat");
+        assertThat(reloaded.description()).isEqualTo("Updated views");
+        assertThat(reloaded.photoUrls()).containsExactly("https://x/new.jpg");
+    }
+
+    @Test
     void deleteRemovesTheHotel() {
         Hotel hotel = new Hotel(HotelId.newId(), TripId.newId(), "Ubud Retreat", "Jungle views", List.of());
         adapter.save(hotel);
