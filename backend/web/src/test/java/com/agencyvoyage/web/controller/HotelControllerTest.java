@@ -2,6 +2,8 @@ package com.agencyvoyage.web.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -10,6 +12,8 @@ import com.agencyvoyage.application.exception.HotelNotFoundException;
 import com.agencyvoyage.application.exception.NotAnAdminException;
 import com.agencyvoyage.application.port.in.AddHotelCommand;
 import com.agencyvoyage.application.port.in.AddHotelUseCase;
+import com.agencyvoyage.application.port.in.DeleteHotelCommand;
+import com.agencyvoyage.application.port.in.DeleteHotelUseCase;
 import com.agencyvoyage.application.port.in.ListHotelsForTripUseCase;
 import com.agencyvoyage.application.port.in.UpdateHotelCommand;
 import com.agencyvoyage.application.port.in.UpdateHotelUseCase;
@@ -50,6 +54,9 @@ class HotelControllerTest {
 
     @MockitoBean
     private UpdateHotelUseCase updateHotelUseCase;
+
+    @MockitoBean
+    private DeleteHotelUseCase deleteHotelUseCase;
 
     /**
      * Not used by HotelController, but JwtAuthenticationFilter is a servlet Filter, so
@@ -143,6 +150,39 @@ class HotelControllerTest {
                         .with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Renamed\",\"description\":\"Updated\",\"photoUrls\":[]}"))
+                .hasStatus(404);
+    }
+
+    @Test
+    void anAdminCanDeleteAHotel() {
+        TripId tripId = TripId.newId();
+        HotelId hotelId = HotelId.newId();
+        doNothing().when(deleteHotelUseCase).deleteHotel(any(DeleteHotelCommand.class));
+
+        assertThat(mvc.delete().uri("/api/trips/" + tripId + "/hotels/" + hotelId).with(asAdmin()))
+                .hasStatus(204);
+        verify(deleteHotelUseCase).deleteHotel(new DeleteHotelCommand(hotelId, ADMIN));
+    }
+
+    @Test
+    void returns403WhenANonAdminTriesToDeleteAHotel() {
+        TripId tripId = TripId.newId();
+        HotelId hotelId = HotelId.newId();
+        doThrow(new NotAnAdminException()).when(deleteHotelUseCase).deleteHotel(any(DeleteHotelCommand.class));
+
+        assertThat(mvc.delete().uri("/api/trips/" + tripId + "/hotels/" + hotelId).with(asAlice()))
+                .hasStatus(403);
+    }
+
+    @Test
+    void returns404WhenDeletingAHotelThatDoesNotExist() {
+        TripId tripId = TripId.newId();
+        HotelId unknownId = HotelId.newId();
+        doThrow(new HotelNotFoundException(unknownId))
+                .when(deleteHotelUseCase)
+                .deleteHotel(any(DeleteHotelCommand.class));
+
+        assertThat(mvc.delete().uri("/api/trips/" + tripId + "/hotels/" + unknownId).with(asAdmin()))
                 .hasStatus(404);
     }
 

@@ -88,6 +88,40 @@ describe('AdminDashboard', () => {
     httpMock.expectOne(`${API_BASE_URL}/api/trips`).flush([sampleTrip()]);
   });
 
+  it('deletes a trip after confirming, then refreshes the list', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await setUp(true);
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    const trip = sampleTrip();
+    httpMock.expectOne(`${API_BASE_URL}/api/trips`).flush([trip]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as { deleteTrip: (t: Trip) => void };
+    component.deleteTrip(trip);
+
+    const deleteReq = httpMock.expectOne(`${API_BASE_URL}/api/trips/${trip.id}`);
+    expect(deleteReq.request.method).toBe('DELETE');
+    deleteReq.flush(null);
+
+    httpMock.expectOne(`${API_BASE_URL}/api/trips`).flush([]);
+  });
+
+  it('does not delete a trip when the confirmation is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await setUp(true);
+    const fixture = TestBed.createComponent(AdminDashboard);
+    fixture.detectChanges();
+    const trip = sampleTrip();
+    httpMock.expectOne(`${API_BASE_URL}/api/trips`).flush([trip]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as { deleteTrip: (t: Trip) => void };
+    component.deleteTrip(trip);
+
+    httpMock.expectNone(`${API_BASE_URL}/api/trips/${trip.id}`);
+  });
+
   function sampleTrip(): Trip {
     return {
       id: 'trip-1',

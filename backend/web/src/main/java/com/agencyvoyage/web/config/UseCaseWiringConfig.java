@@ -4,6 +4,8 @@ import com.agencyvoyage.application.port.in.AddHotelUseCase;
 import com.agencyvoyage.application.port.in.ConfirmHotelReservationUseCase;
 import com.agencyvoyage.application.port.in.CreateGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.CreateTripUseCase;
+import com.agencyvoyage.application.port.in.DeleteHotelUseCase;
+import com.agencyvoyage.application.port.in.DeleteTripUseCase;
 import com.agencyvoyage.application.port.in.FinalizeGroupBookingUseCase;
 import com.agencyvoyage.application.port.in.GetAuditTrailUseCase;
 import com.agencyvoyage.application.port.in.GetGroupBookingUseCase;
@@ -35,6 +37,8 @@ import com.agencyvoyage.application.service.AddHotelService;
 import com.agencyvoyage.application.service.ConfirmHotelReservationService;
 import com.agencyvoyage.application.service.CreateGroupBookingService;
 import com.agencyvoyage.application.service.CreateTripService;
+import com.agencyvoyage.application.service.DeleteHotelService;
+import com.agencyvoyage.application.service.DeleteTripService;
 import com.agencyvoyage.application.service.FinalizeGroupBookingService;
 import com.agencyvoyage.application.service.GetAuditTrailService;
 import com.agencyvoyage.application.service.GetGroupBookingService;
@@ -198,5 +202,15 @@ public class UseCaseWiringConfig {
     @Bean
     public UpdateTripUseCase updateTripUseCase(TripRepository tripRepository) {
         return new UpdateTripService(tripRepository);
+    }
+
+    @Bean
+    public DeleteTripUseCase deleteTripUseCase(TripRepository tripRepository) {
+        return new DeleteTripService(tripRepository);
+    }
+
+    @Bean
+    public DeleteHotelUseCase deleteHotelUseCase(HotelRepository hotelRepository) {
+        return new DeleteHotelService(hotelRepository);
     }
 }

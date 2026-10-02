@@ -130,6 +130,30 @@ h1 {
   }
 }
 
+.hotel-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+
+  button mat-icon {
+    margin-right: 0.3rem;
+    font-size: 1.1rem;
+    height: 1.1rem;
+    width: 1.1rem;
+    vertical-align: middle;
+  }
+}
+
+// Destructive action - borrows the theme's error color instead of the primary accent.
+.danger {
+  color: var(--mat-sys-error) !important;
+  border-color: color-mix(in srgb, var(--mat-sys-error) 45%, var(--glass-border)) !important;
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-error) 8%, transparent);
+  }
+}
+
 .hotels-panel {
   margin-top: 1.5rem;
   padding-top: 1.5rem;

@@ -66,6 +66,16 @@ class TripRepositoryAdapterIT extends AbstractPostgresIT {
     }
 
     @Test
+    void deleteByIdRemovesTheTrip() {
+        Trip trip = trip();
+        adapter.save(trip);
+
+        adapter.deleteById(trip.id());
+
+        assertThat(adapter.findById(trip.id())).isEmpty();
+    }
+
+    @Test
     void saveUpdatesAnExistingTripAndReplacesItsPriceTiers() {
         Trip trip = trip();
         adapter.save(trip);

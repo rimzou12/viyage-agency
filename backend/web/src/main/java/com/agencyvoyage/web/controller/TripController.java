@@ -2,6 +2,8 @@ package com.agencyvoyage.web.controller;
 
 import com.agencyvoyage.application.port.in.CreateTripCommand;
 import com.agencyvoyage.application.port.in.CreateTripUseCase;
+import com.agencyvoyage.application.port.in.DeleteTripCommand;
+import com.agencyvoyage.application.port.in.DeleteTripUseCase;
 import com.agencyvoyage.application.port.in.GetTripUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.in.UpdateTripCommand;
@@ -17,6 +19,7 @@ import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,16 +36,19 @@ public class TripController {
     private final GetTripUseCase getTripUseCase;
     private final CreateTripUseCase createTripUseCase;
     private final UpdateTripUseCase updateTripUseCase;
+    private final DeleteTripUseCase deleteTripUseCase;
 
     public TripController(
             ListTripsUseCase listTripsUseCase,
             GetTripUseCase getTripUseCase,
             CreateTripUseCase createTripUseCase,
-            UpdateTripUseCase updateTripUseCase) {
+            UpdateTripUseCase updateTripUseCase,
+            DeleteTripUseCase deleteTripUseCase) {
         this.listTripsUseCase = Objects.requireNonNull(listTripsUseCase);
         this.getTripUseCase = Objects.requireNonNull(getTripUseCase);
         this.createTripUseCase = Objects.requireNonNull(createTripUseCase);
         this.updateTripUseCase = Objects.requireNonNull(updateTripUseCase);
+        this.deleteTripUseCase = Objects.requireNonNull(deleteTripUseCase);
     }
 
     @GetMapping
@@ -88,6 +94,12 @@ public class TripController {
                 toPriceTiers(request),
                 currentUser));
         return TripResponse.from(trip);
+    }
+
+    @DeleteMapping("/{tripId}")
+    public ResponseEntity<Void> deleteTrip(@PathVariable String tripId, @AuthenticationPrincipal User currentUser) {
+        deleteTripUseCase.deleteTrip(new DeleteTripCommand(TripId.of(tripId), currentUser));
+        return ResponseEntity.noContent().build();
     }
 
     private static List<PriceTier> toPriceTiers(TripRequest request) {

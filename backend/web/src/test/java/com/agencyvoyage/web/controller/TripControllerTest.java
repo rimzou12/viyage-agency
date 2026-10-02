@@ -2,12 +2,17 @@ package com.agencyvoyage.web.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
 import com.agencyvoyage.application.exception.TripNotFoundException;
 import com.agencyvoyage.application.port.in.CreateTripCommand;
 import com.agencyvoyage.application.port.in.CreateTripUseCase;
+import com.agencyvoyage.application.port.in.DeleteTripCommand;
+import com.agencyvoyage.application.port.in.DeleteTripUseCase;
 import com.agencyvoyage.application.port.in.GetTripUseCase;
 import com.agencyvoyage.application.port.in.ListTripsUseCase;
 import com.agencyvoyage.application.port.in.UpdateTripCommand;
@@ -57,6 +62,9 @@ class TripControllerTest {
 
     @MockitoBean
     private UpdateTripUseCase updateTripUseCase;
+
+    @MockitoBean
+    private DeleteTripUseCase deleteTripUseCase;
 
     /**
      * Not used by TripController, but JwtAuthenticationFilter is a servlet Filter, so
@@ -149,6 +157,31 @@ class TripControllerTest {
                                         + "\"returnDate\":\"2027-06-20\",\"minParticipants\":2,\"maxParticipants\":5,"
                                         + "\"bookingDeadline\":\"2027-05-01T00:00:00Z\",\"basePrice\":1000,\"priceTiers\":[]}"))
                 .hasStatus(404);
+    }
+
+    @Test
+    void anAdminCanDeleteATrip() {
+        TripId tripId = TripId.newId();
+        doNothing().when(deleteTripUseCase).deleteTrip(any(DeleteTripCommand.class));
+
+        assertThat(mvc.delete().uri("/api/trips/" + tripId).with(asAdmin())).hasStatus(204);
+        verify(deleteTripUseCase).deleteTrip(new DeleteTripCommand(tripId, ADMIN));
+    }
+
+    @Test
+    void returns403WhenANonAdminTriesToDeleteATrip() {
+        TripId tripId = TripId.newId();
+        doThrow(new NotAnAdminException()).when(deleteTripUseCase).deleteTrip(any(DeleteTripCommand.class));
+
+        assertThat(mvc.delete().uri("/api/trips/" + tripId).with(asAlice())).hasStatus(403);
+    }
+
+    @Test
+    void returns404WhenDeletingATripThatDoesNotExist() {
+        TripId unknownId = TripId.newId();
+        doThrow(new TripNotFoundException(unknownId)).when(deleteTripUseCase).deleteTrip(any(DeleteTripCommand.class));
+
+        assertThat(mvc.delete().uri("/api/trips/" + unknownId).with(asAdmin())).hasStatus(404);
     }
 
     private static org.springframework.test.web.servlet.request.RequestPostProcessor asAdmin() {
