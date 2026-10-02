@@ -75,7 +75,7 @@ h1 {
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 15px 40px -20px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 15px 35px -18px rgba(60, 40, 20, 0.18);
   opacity: 0;
   animation: fade-in-up 0.6s var(--ease-swift) forwards;
   transition:
@@ -94,7 +94,7 @@ h1 {
     transform: translateY(-6px) scale(1.012);
     border-color: color-mix(in srgb, var(--mat-sys-primary) 55%, var(--glass-border));
     box-shadow:
-      0 20px 45px -15px rgba(0, 0, 0, 0.55),
+      0 20px 40px -15px rgba(60, 40, 20, 0.2),
       0 0 0 1px color-mix(in srgb, var(--mat-sys-primary) 35%, transparent),
       0 0 40px -5px var(--glow-primary);
   }

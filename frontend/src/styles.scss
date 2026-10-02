@@ -6,12 +6,16 @@
 
 html {
   height: 100%;
+  // Light "sunrise over the ocean" theme: a warm coral/sunset orange primary
+  // (energy, happiness) paired with a fresh turquoise-cyan tertiary (sky,
+  // sea, travel) - a classic warm/cool travel-brand pairing, and light so
+  // the whole page reads bright and welcoming rather than moody.
   @include mat.theme(
     (
       color: (
-        primary: mat.$blue-palette,
-        tertiary: mat.$yellow-palette,
-        theme-type: dark,
+        primary: mat.$orange-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: light,
       ),
       typography: (
         plain-family: 'Inter',
@@ -27,22 +31,21 @@ html {
   // variables above, for the parts of the "aurora" look Material doesn't
   // have an opinion on: glow, glass surfaces and the signature gradient.
   //
-  // --page-base is deliberately its own deep indigo-black, not
-  // var(--mat-sys-surface) (a flat warm gray) - the blooms below sit on top
-  // of it as isolated glows rather than a wash that tints the whole page a
-  // muddy brown where violet and orange used to overlap everywhere.
-  --page-base: #09070f;
-  --glow-primary: color-mix(in srgb, var(--mat-sys-primary) 55%, transparent);
-  --glow-tertiary: color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent);
-  --glass-surface: color-mix(in srgb, #15121c 82%, transparent);
-  --glass-border: color-mix(in srgb, var(--mat-sys-primary) 22%, var(--mat-sys-outline) 35%);
-  // Deliberately stays within the blue family (primary's pale dark-theme tone
-  // through to inverse-primary's much more saturated one) rather than
-  // crossing into tertiary - blending blue straight into yellow always drifts
-  // through a sickly olive/green on the way, no matter which two hues the
-  // theme uses. Tertiary stays reserved for small, solid (never-blended)
-  // accents elsewhere - status dots, badges - where it reads as a clean
-  // highlight instead of a muddy in-between.
+  // --page-base is deliberately its own warm ivory, not var(--mat-sys-surface)
+  // (a flatter, slightly cooler white) - gives the page a sunny warmth even
+  // where no color bloom reaches.
+  --page-base: #fffaf2;
+  --glow-primary: color-mix(in srgb, var(--mat-sys-primary) 45%, transparent);
+  --glow-tertiary: color-mix(in srgb, var(--mat-sys-tertiary) 45%, transparent);
+  --glass-surface: color-mix(in srgb, #ffffff 72%, transparent);
+  --glass-border: color-mix(in srgb, var(--mat-sys-primary) 18%, var(--mat-sys-outline) 25%);
+  // Deliberately stays within the primary color's own tones (its light
+  // dark-theme-adjacent shade through to the much more saturated
+  // --mat-sys-inverse-primary) rather than crossing into tertiary - blending
+  // two different hues in one gradient reliably drifts through a muddy
+  // in-between on the way (tried with violet/orange, then blue/yellow - both
+  // did it), so tertiary is kept to small, solid, never-blended accents
+  // instead (status dots, badges).
   --gradient-aurora: linear-gradient(
     135deg,
     var(--mat-sys-primary) 0%,
@@ -53,7 +56,7 @@ html {
 }
 
 body {
-  color-scheme: dark;
+  color-scheme: light;
 
   background-color: var(--page-base);
   color: var(--mat-sys-on-surface);
@@ -74,20 +77,19 @@ body {
   // A slow-drifting aurora mesh behind every page - fixed so it never
   // scrolls with the content, layered from the theme's own generated
   // colors so it always stays in harmony with whatever palette is active.
-  // Kept small and low-opacity so each bloom reads as an isolated glow
-  // against --page-base rather than a wash that muddies the whole page -
-  // the tertiary orange in particular is throttled back since at full
-  // strength it blended with the violet primary into a brown haze.
+  // Kept small and low-opacity so each bloom reads as a soft, sunny wash
+  // against --page-base's warm ivory rather than muddying it or hurting
+  // text contrast.
   background-image:
-    radial-gradient(circle at 12% 15%, color-mix(in srgb, var(--mat-sys-primary) 30%, transparent), transparent 38%),
+    radial-gradient(circle at 12% 15%, color-mix(in srgb, var(--mat-sys-primary) 16%, transparent), transparent 38%),
     radial-gradient(
       circle at 88% 8%,
-      color-mix(in srgb, var(--mat-sys-tertiary) 16%, transparent),
+      color-mix(in srgb, var(--mat-sys-tertiary) 14%, transparent),
       transparent 32%
     ),
     radial-gradient(
       circle at 50% 100%,
-      color-mix(in srgb, var(--mat-sys-secondary) 18%, transparent),
+      color-mix(in srgb, var(--mat-sys-tertiary) 10%, transparent),
       transparent 42%
     );
   background-attachment: fixed;
@@ -136,14 +138,16 @@ a {
 
 // Shared "glass panel" look used by cards/sections across every page. The
 // shadow is baseline (not just on :hover) so panels read as elevated cards
-// against --page-base's near-black even before any interaction.
+// against --page-base's warm ivory even before any interaction - kept soft
+// and low-opacity, since the stark dark-theme shadow read as a harsh black
+// smudge once the page itself turned light.
 .glass-panel {
   background: var(--glass-surface);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 15px 40px -20px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 15px 35px -18px rgba(60, 40, 20, 0.18);
 }
 
 @keyframes fade-in-up {
