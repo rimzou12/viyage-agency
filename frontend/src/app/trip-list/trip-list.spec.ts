@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { TripList } from './trip-list';
 import { API_BASE_URL } from '../core/api-config';
 import { Trip } from '../core/models';
@@ -18,6 +19,7 @@ describe('TripList', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideNoopAnimations(),
+        provideNativeDateAdapter(),
       ],
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
@@ -37,6 +39,43 @@ describe('TripList', () => {
     expect(component.loading()).toBeFalsy();
     expect(component.trips().length).toBe(1);
     expect(component.trips()[0].destination).toBe('Bali');
+  });
+
+  it('filters trips by name as the search term changes', () => {
+    const fixture = TestBed.createComponent(TripList);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(`${API_BASE_URL}/api/trips`)
+      .flush([sampleTrip(), { ...sampleTrip(), id: 'trip-2', destination: 'Kyoto' }]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as {
+      searchTerm: { set: (v: string) => void };
+      filteredTrips: () => Trip[];
+    };
+    component.searchTerm.set('kyo');
+
+    expect(component.filteredTrips().map((t) => t.destination)).toEqual(['Kyoto']);
+  });
+
+  it('filters trips to ones running on the chosen availability date', () => {
+    const fixture = TestBed.createComponent(TripList);
+    fixture.detectChanges();
+
+    httpMock.expectOne(`${API_BASE_URL}/api/trips`).flush([sampleTrip()]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as {
+      availabilityDate: { set: (v: Date | null) => void };
+      filteredTrips: () => Trip[];
+    };
+
+    component.availabilityDate.set(new Date(2027, 5, 15));
+    expect(component.filteredTrips().length).toBe(1);
+
+    component.availabilityDate.set(new Date(2027, 6, 1));
+    expect(component.filteredTrips().length).toBe(0);
   });
 
   it('shows an error message when the request fails', () => {

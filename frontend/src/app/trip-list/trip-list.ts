@@ -1,6 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripService } from '../core/trip.service';
 import { Trip } from '../core/models';
@@ -10,7 +15,18 @@ import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 @Component({
   selector: 'app-trip-list',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel, MatProgressSpinnerModule],
+  imports: [
+    RouterLink,
+    CurrencyPipe,
+    DatePipe,
+    FormsModule,
+    ImageCarousel,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './trip-list.html',
   styleUrl: './trip-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,6 +37,30 @@ export class TripList {
   protected readonly trips = signal<Trip[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly searchTerm = signal('');
+  /** The date a trip must be running on (between its departure and return) to match. */
+  protected readonly availabilityDate = signal<Date | null>(null);
+
+  protected readonly filteredTrips = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const date = this.availabilityDate();
+    return this.trips().filter((trip) => {
+      const matchesName =
+        !term || trip.destination.toLowerCase().includes(term) || trip.description.toLowerCase().includes(term);
+      const matchesDate = !date || this.isAvailableOn(trip, date);
+      return matchesName && matchesDate;
+    });
+  });
+
+  private isAvailableOn(trip: Trip, date: Date): boolean {
+    const target = this.atMidnight(date).getTime();
+    return target >= this.atMidnight(new Date(trip.departureDate)).getTime()
+      && target <= this.atMidnight(new Date(trip.returnDate)).getTime();
+  }
+
+  private atMidnight(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
 
   constructor() {
     this.tripService.listTrips().subscribe({
@@ -33,6 +73,11 @@ export class TripList {
         this.loading.set(false);
       },
     });
+  }
+
+  protected clearFilters(): void {
+    this.searchTerm.set('');
+    this.availabilityDate.set(null);
   }
 
   protected startingPrice(trip: Trip): number {

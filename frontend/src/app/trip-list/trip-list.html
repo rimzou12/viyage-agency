@@ -2,6 +2,52 @@
   <h1 class="accent-heading">Group trips</h1>
   <p class="subtitle">Join a group booking and the price per seat drops as more people sign up.</p>
 
+  @if (!loading() && !error() && trips().length > 0) {
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Search by name</mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          placeholder="Try &quot;Bali&quot; or &quot;desert&quot;"
+        />
+        @if (searchTerm()) {
+          <button matSuffix mat-icon-button type="button" aria-label="Clear search" (click)="searchTerm.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="availability">
+        <mat-icon matPrefix>event_available</mat-icon>
+        <mat-label>Available on</mat-label>
+        <input
+          matInput
+          [matDatepicker]="availabilityPicker"
+          [ngModel]="availabilityDate()"
+          (ngModelChange)="availabilityDate.set($event)"
+          placeholder="Any date"
+        />
+        @if (availabilityDate()) {
+          <button
+            matSuffix
+            mat-icon-button
+            type="button"
+            aria-label="Clear date"
+            (click)="availabilityDate.set(null)"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        <mat-datepicker-toggle matIconSuffix [for]="availabilityPicker" />
+        <mat-datepicker #availabilityPicker />
+      </mat-form-field>
+    </div>
+  }
+
   @if (loading()) {
     <div class="loading">
       <mat-spinner diameter="36" />
@@ -11,9 +57,14 @@
     <p class="error">{{ error() }}</p>
   } @else if (trips().length === 0) {
     <p>No trips available right now.</p>
+  } @else if (filteredTrips().length === 0) {
+    <p class="no-results">
+      No trips match these filters.
+      <button mat-button type="button" (click)="clearFilters()">Clear filters</button>
+    </p>
   } @else {
     <div class="trip-grid">
-      @for (trip of trips(); track trip.id) {
+      @for (trip of filteredTrips(); track trip.id) {
         <a class="trip-card" [routerLink]="['/trips', trip.id]">
           <app-image-carousel class="card-photo" [images]="photos(trip)" />
           <div class="card-body">
