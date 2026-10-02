@@ -20,6 +20,11 @@ public class TripRepositoryAdapter implements TripRepository {
     }
 
     @Override
+    public void save(Trip trip) {
+        springDataRepository.save(TripMapper.toEntity(trip));
+    }
+
+    @Override
     public Optional<Trip> findById(TripId id) {
         return springDataRepository.findById(id.value()).map(TripMapper::toDomain);
     }

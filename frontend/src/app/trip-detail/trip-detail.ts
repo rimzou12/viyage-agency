@@ -2,10 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripService } from '../core/trip.service';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
@@ -18,17 +15,7 @@ import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 @Component({
   selector: 'app-trip-detail',
   standalone: true,
-  imports: [
-    RouterLink,
-    CurrencyPipe,
-    DatePipe,
-    FormsModule,
-    ImageCarousel,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-  ],
+  imports: [RouterLink, CurrencyPipe, DatePipe, ImageCarousel, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './trip-detail.html',
   styleUrl: './trip-detail.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,11 +41,6 @@ export class TripDetail {
   });
 
   protected readonly hotels = signal<Hotel[]>([]);
-  protected readonly hotelName = signal('');
-  protected readonly hotelDescription = signal('');
-  protected readonly hotelPhotoUrls = signal('');
-  protected readonly addingHotel = signal(false);
-  protected readonly addHotelError = signal<string | null>(null);
 
   constructor() {
     this.tripService.getTrip(this.tripId).subscribe({
@@ -72,33 +54,6 @@ export class TripDetail {
       },
     });
     this.refreshHotels();
-  }
-
-  protected addHotel(): void {
-    const name = this.hotelName().trim();
-    const description = this.hotelDescription().trim();
-    if (!name || !description) {
-      return;
-    }
-    const photoUrls = this.hotelPhotoUrls()
-      .split(/\r?\n/)
-      .map((url) => url.trim())
-      .filter((url) => url.length > 0);
-    this.addingHotel.set(true);
-    this.addHotelError.set(null);
-    this.hotelService.addHotel(this.tripId, name, description, photoUrls).subscribe({
-      next: () => {
-        this.addingHotel.set(false);
-        this.hotelName.set('');
-        this.hotelDescription.set('');
-        this.hotelPhotoUrls.set('');
-        this.refreshHotels();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.addingHotel.set(false);
-        this.addHotelError.set(apiErrorMessage(err, 'Could not add this hotel.'));
-      },
-    });
   }
 
   private refreshHotels(): void {

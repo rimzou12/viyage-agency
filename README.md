@@ -132,8 +132,13 @@ Reframing the kata's original group-purchase stories for trips:
   requesting emails them too, letting them know a reservation is pending.
 - Any logged-in user can send the admin a message (subject + text) from the Contact
   Admin page; any logged-in user can read the inbox back.
-- An admin can curate a hotel catalog per trip (name, description, photo URLs),
-  visible to everyone browsing that trip; only an admin can add to it.
+- An admin can create and edit the trip catalog itself (destination, dates,
+  participant limits, booking deadline, pricing tiers) and curate a hotel catalog per
+  trip (name, description, photo URLs) from a dedicated `/admin` dashboard - trips and
+  hotels are visible to everyone browsing, but only an admin can add or edit either.
+  Logging in as an admin goes straight to the dashboard instead of the trip list, and
+  the dashboard replaces the "Contact admin" link in the header (an admin doesn't need
+  to message themselves).
 - The trip catalog can be searched by name/description and filtered to trips running on
   a chosen date (i.e. that date falls within the trip's departure-return window); both
   filters combine and update the list live as you type or pick a date.
@@ -170,6 +175,8 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | POST   | `/api/auth/login`                         | -    | Log in (`{email, password}`) → `{token, user}` |
 | GET    | `/api/trips`                              | -    | List the trip catalog                 |
 | GET    | `/api/trips/{tripId}`                     | -    | Get one trip                          |
+| POST   | `/api/trips`                              | admin only | Add a trip to the catalog (same body shape as `PUT`) - `403` for a non-admin |
+| PUT    | `/api/trips/{tripId}`                     | admin only | Edit a trip (`{destination, description, departureDate, returnDate, minParticipants, maxParticipants, bookingDeadline, basePrice, priceTiers}`) - `403` for a non-admin, `404` if unknown |
 | POST   | `/api/trips/{tripId}/group-bookings`      | required | Start a group booking as the caller |
 | POST   | `/api/group-bookings/{bookingId}/participants` | required | Join a group booking as the caller (`?ref={participantId}` credits a referral discount to both sides) |
 | DELETE | `/api/group-bookings/{bookingId}/participants/me` | required | Leave a group booking as the caller (auto-promotes the next waitlisted person, if any) |
@@ -184,6 +191,7 @@ The frontend's API base URL is hardcoded to `http://localhost:8080` in
 | GET    | `/api/contact-messages`                   | required | List every contact message, newest first |
 | GET    | `/api/trips/{tripId}/hotels`              | -    | List the hotel catalog for a trip |
 | POST   | `/api/trips/{tripId}/hotels`              | admin only | Add a hotel to a trip's catalog (`{name, description, photoUrls}`) - `403` for a non-admin |
+| PUT    | `/api/trips/{tripId}/hotels/{hotelId}`    | admin only | Edit a hotel (same body as `POST`) - `403` for a non-admin, `404` if unknown |
 
 Authenticated requests send `Authorization: Bearer <token>`, a JWT (HS256) returned by
 register/login. Its secret and expiration are configured via
@@ -252,7 +260,7 @@ into by this work - branches are merged in by hand, in order:
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
 `join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme` →
-`dark-mode-redesign` → `light-theme`
+`dark-mode-redesign` → `light-theme` → `admin-dashboard`
 
 ## Simplifications and next steps
 

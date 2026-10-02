@@ -1,0 +1,242 @@
+<main class="page">
+  <h1 class="accent-heading">Admin dashboard</h1>
+  <p class="subtitle">Add and edit trips and their hotel catalogs.</p>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="36" />
+      <p>Loading trips...</p>
+    </div>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else {
+    @if (!showTripForm()) {
+      <button mat-flat-button type="button" class="add-trip-button" (click)="startCreatingTrip()">
+        <mat-icon>add</mat-icon>
+        Add a trip
+      </button>
+    }
+
+    @if (showTripForm(); as show) {
+      <form class="trip-form glass-panel" (submit)="$event.preventDefault(); submitTripForm()">
+        <h2>{{ editingTripId() ? 'Edit trip' : 'Add a trip' }}</h2>
+
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Destination</mat-label>
+            <input
+              matInput
+              [ngModel]="tripForm().destination"
+              name="destination"
+              (ngModelChange)="tripForm.set({ ...tripForm(), destination: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Description</mat-label>
+            <input
+              matInput
+              [ngModel]="tripForm().description"
+              name="description"
+              (ngModelChange)="tripForm.set({ ...tripForm(), description: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Departure date</mat-label>
+            <input
+              matInput
+              type="date"
+              [ngModel]="tripForm().departureDate"
+              name="departureDate"
+              (ngModelChange)="tripForm.set({ ...tripForm(), departureDate: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Return date</mat-label>
+            <input
+              matInput
+              type="date"
+              [ngModel]="tripForm().returnDate"
+              name="returnDate"
+              (ngModelChange)="tripForm.set({ ...tripForm(), returnDate: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Booking closes</mat-label>
+            <input
+              matInput
+              type="datetime-local"
+              [ngModel]="tripForm().bookingDeadline"
+              name="bookingDeadline"
+              (ngModelChange)="tripForm.set({ ...tripForm(), bookingDeadline: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Min travelers</mat-label>
+            <input
+              matInput
+              type="number"
+              min="1"
+              [ngModel]="tripForm().minParticipants"
+              name="minParticipants"
+              (ngModelChange)="tripForm.set({ ...tripForm(), minParticipants: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max travelers</mat-label>
+            <input
+              matInput
+              type="number"
+              min="1"
+              [ngModel]="tripForm().maxParticipants"
+              name="maxParticipants"
+              (ngModelChange)="tripForm.set({ ...tripForm(), maxParticipants: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Base price per seat</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              step="0.01"
+              [ngModel]="tripForm().basePrice"
+              name="basePrice"
+              (ngModelChange)="tripForm.set({ ...tripForm(), basePrice: $event })"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Price tiers - one per line, "min travelers,price per seat"</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              placeholder="5,800&#10;9,650"
+              [ngModel]="tripForm().priceTiers"
+              name="priceTiers"
+              (ngModelChange)="tripForm.set({ ...tripForm(), priceTiers: $event })"
+            ></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button type="submit" [disabled]="savingTrip()">
+            {{ savingTrip() ? 'Saving...' : editingTripId() ? 'Save changes' : 'Create trip' }}
+          </button>
+          <button mat-stroked-button type="button" [disabled]="savingTrip()" (click)="cancelTripForm()">
+            Cancel
+          </button>
+        </div>
+        @if (tripFormError()) {
+          <p class="error">{{ tripFormError() }}</p>
+        }
+      </form>
+    }
+
+    <ul class="trip-list">
+      @for (trip of trips(); track trip.id) {
+        <li class="glass-panel">
+          <div class="trip-row">
+            <div class="trip-info">
+              <h3>{{ trip.destination }}</h3>
+              <p class="dates">{{ trip.departureDate | date }} &ndash; {{ trip.returnDate | date }}</p>
+              <p class="price">from {{ (trip.priceTiers.at(-1)?.pricePerSeat ?? trip.basePrice) | currency }} per seat</p>
+            </div>
+            <div class="trip-actions">
+              <button mat-stroked-button type="button" (click)="startEditingTrip(trip)">
+                <mat-icon>edit</mat-icon>
+                Edit trip
+              </button>
+              <button mat-stroked-button type="button" (click)="toggleHotels(trip)">
+                <mat-icon>hotel</mat-icon>
+                {{ expandedTripId() === trip.id ? 'Hide hotels' : 'Manage hotels' }}
+              </button>
+            </div>
+          </div>
+
+          @if (expandedTripId() === trip.id) {
+            <div class="hotels-panel">
+              @if (loadingHotels()) {
+                <p class="hint">Loading hotels...</p>
+              } @else {
+                @if (hotels().length > 0) {
+                  <ul class="hotel-list">
+                    @for (hotel of hotels(); track hotel.id) {
+                      <li>
+                        <div>
+                          <strong>{{ hotel.name }}</strong>
+                          <p>{{ hotel.description }}</p>
+                        </div>
+                        <button mat-stroked-button type="button" (click)="startEditingHotel(hotel)">
+                          <mat-icon>edit</mat-icon>
+                          Edit
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="hint">No hotels added for this trip yet.</p>
+                }
+              }
+
+              <form class="hotel-form" (submit)="$event.preventDefault(); submitHotelForm()">
+                <h4>{{ editingHotelId() ? 'Edit hotel' : 'Add a hotel' }}</h4>
+                <mat-form-field appearance="outline">
+                  <mat-label>Name</mat-label>
+                  <input
+                    matInput
+                    [ngModel]="hotelForm().name"
+                    name="hotelName"
+                    (ngModelChange)="hotelForm.set({ ...hotelForm(), name: $event })"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Description</mat-label>
+                  <input
+                    matInput
+                    [ngModel]="hotelForm().description"
+                    name="hotelDescription"
+                    (ngModelChange)="hotelForm.set({ ...hotelForm(), description: $event })"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Photo URLs (one per line)</mat-label>
+                  <textarea
+                    matInput
+                    rows="3"
+                    [ngModel]="hotelForm().photoUrls"
+                    name="hotelPhotoUrls"
+                    (ngModelChange)="hotelForm.set({ ...hotelForm(), photoUrls: $event })"
+                  ></textarea>
+                </mat-form-field>
+                <div class="actions">
+                  <button
+                    mat-flat-button
+                    type="submit"
+                    [disabled]="savingHotel() || !hotelForm().name.trim() || !hotelForm().description.trim()"
+                  >
+                    {{ savingHotel() ? 'Saving...' : editingHotelId() ? 'Save changes' : 'Add hotel' }}
+                  </button>
+                  @if (editingHotelId()) {
+                    <button mat-stroked-button type="button" [disabled]="savingHotel()" (click)="cancelHotelForm()">
+                      Cancel
+                    </button>
+                  }
+                </div>
+                @if (hotelFormError()) {
+                  <p class="error">{{ hotelFormError() }}</p>
+                }
+              </form>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</main>

@@ -2,6 +2,7 @@ package com.agencyvoyage.web.exception;
 
 import com.agencyvoyage.application.exception.EmailAlreadyRegisteredException;
 import com.agencyvoyage.application.exception.GroupBookingNotFoundException;
+import com.agencyvoyage.application.exception.HotelNotFoundException;
 import com.agencyvoyage.application.exception.InvalidCredentialsException;
 import com.agencyvoyage.application.exception.NotAnAdminException;
 import com.agencyvoyage.application.exception.TripNotFoundException;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({TripNotFoundException.class, GroupBookingNotFoundException.class})
+    @ExceptionHandler({TripNotFoundException.class, GroupBookingNotFoundException.class, HotelNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(ex.getMessage()));
     }

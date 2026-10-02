@@ -56,6 +56,40 @@ class TripRepositoryAdapterIT extends AbstractPostgresIT {
         assertThat(adapter.findById(TripId.newId())).isEmpty();
     }
 
+    @Test
+    void saveCreatesANewTrip() {
+        Trip trip = trip();
+
+        adapter.save(trip);
+
+        assertThat(adapter.findById(trip.id())).contains(trip);
+    }
+
+    @Test
+    void saveUpdatesAnExistingTripAndReplacesItsPriceTiers() {
+        Trip trip = trip();
+        adapter.save(trip);
+
+        PricingSchedule updatedSchedule =
+                PricingSchedule.of(new BigDecimal("2000"), List.of(new PriceTier(3, new BigDecimal("1500"))), 10);
+        Trip updated = new Trip(
+                trip.id(),
+                "Kyoto",
+                "7 days in Kyoto",
+                trip.departureDate(),
+                trip.returnDate(),
+                trip.minParticipants(),
+                trip.maxParticipants(),
+                trip.bookingDeadline(),
+                updatedSchedule);
+        adapter.save(updated);
+
+        Trip reloaded = adapter.findById(trip.id()).orElseThrow();
+        assertThat(reloaded.destination()).isEqualTo("Kyoto");
+        assertThat(reloaded.priceTiers()).extracting(PriceTier::minParticipants).containsExactly(3);
+        assertThat(reloaded.pricingSchedule().priceFor(3)).isEqualByComparingTo("1500");
+    }
+
     private static Trip trip() {
         PricingSchedule schedule = PricingSchedule.of(
                 new BigDecimal("1000"),

@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface TripRepository {
 
+    void save(Trip trip);
+
     Optional<Trip> findById(TripId id);
 
     List<Trip> findAll();

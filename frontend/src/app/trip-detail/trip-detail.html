@@ -67,42 +67,9 @@
       }
 
       @if (auth.currentUser()?.isAdmin) {
-        <form class="add-hotel" (submit)="$event.preventDefault(); addHotel()">
-          <h3>Add a hotel</h3>
-          <mat-form-field appearance="outline">
-            <mat-label>Name</mat-label>
-            <input matInput [ngModel]="hotelName()" name="hotelName" (ngModelChange)="hotelName.set($event)" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Description</mat-label>
-            <input
-              matInput
-              [ngModel]="hotelDescription()"
-              name="hotelDescription"
-              (ngModelChange)="hotelDescription.set($event)"
-            />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Photo URLs (one per line)</mat-label>
-            <textarea
-              matInput
-              rows="3"
-              [ngModel]="hotelPhotoUrls()"
-              name="hotelPhotoUrls"
-              (ngModelChange)="hotelPhotoUrls.set($event)"
-            ></textarea>
-          </mat-form-field>
-          <button
-            mat-flat-button
-            type="submit"
-            [disabled]="addingHotel() || !hotelName().trim() || !hotelDescription().trim()"
-          >
-            {{ addingHotel() ? 'Adding...' : 'Add hotel' }}
-          </button>
-          @if (addHotelError()) {
-            <p class="error">{{ addHotelError() }}</p>
-          }
-        </form>
+        <p class="hint">
+          <a routerLink="/admin">Manage this trip's hotels in the admin dashboard &rarr;</a>
+        </p>
       }
     </section>
 
