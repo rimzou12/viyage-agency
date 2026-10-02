@@ -8,13 +8,26 @@ import { ContactMessage } from './models';
 export class ContactMessageService {
   private readonly http = inject(HttpClient);
 
-  /** Requires the caller to be logged in - the auth interceptor attaches the token. */
-  sendMessage(subject: string, message: string): Observable<ContactMessage> {
-    return this.http.post<ContactMessage>(`${API_BASE_URL}/api/contact-messages`, { subject, message });
+  /** Sends a message as the caller, starting or continuing their own thread with the admin. */
+  sendMessage(message: string): Observable<ContactMessage> {
+    return this.http.post<ContactMessage>(`${API_BASE_URL}/api/contact-messages`, { message });
   }
 
-  /** Newest first. No dedicated admin role yet, so any logged-in user can list messages. */
-  listMessages(): Observable<ContactMessage[]> {
+  /** Admin only: replies into a given customer's thread. */
+  reply(conversationUserId: string, message: string): Observable<ContactMessage> {
+    return this.http.post<ContactMessage>(`${API_BASE_URL}/api/contact-messages/reply`, {
+      conversationUserId,
+      message,
+    });
+  }
+
+  /** Oldest first. The caller's own thread, or any thread if the caller is an admin. */
+  getConversation(userId: string): Observable<ContactMessage[]> {
+    return this.http.get<ContactMessage[]>(`${API_BASE_URL}/api/contact-messages/conversations/${userId}`);
+  }
+
+  /** Admin only: every message across every conversation, newest first. */
+  listAllMessages(): Observable<ContactMessage[]> {
     return this.http.get<ContactMessage[]>(`${API_BASE_URL}/api/contact-messages`);
   }
 }

@@ -1,0 +1,74 @@
+<div class="chat-widget">
+  @if (open()) {
+    <div class="chat-panel">
+      <div class="chat-header">
+        @if (isAdmin() && selectedConversationUserId()) {
+          <button mat-icon-button type="button" (click)="backToConversationList()" aria-label="Back to conversations">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+        }
+        <span class="chat-title">
+          {{ isAdmin() && !selectedConversationUserId() ? 'Conversations' : 'Chat with admin' }}
+        </span>
+      </div>
+
+      @if (isAdmin() && !selectedConversationUserId()) {
+        <div class="conversation-list">
+          @if (conversations().length === 0) {
+            <p class="empty">No conversations yet.</p>
+          }
+          @for (conversation of conversations(); track conversation.conversationUserId) {
+            <button
+              type="button"
+              class="conversation-item"
+              (click)="selectConversation(conversation.conversationUserId)"
+            >
+              <strong>{{ conversation.customerName }}</strong>
+              <span class="preview">{{ conversation.lastMessage }}</span>
+              <span class="time">{{ conversation.lastSentAt | date: 'short' }}</span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="messages">
+          @if (loadingMessages() && messages().length === 0) {
+            <p class="empty">Loading…</p>
+          } @else if (messages().length === 0) {
+            <p class="empty">No messages yet. Say hello!</p>
+          }
+          @for (message of messages(); track message.id) {
+            <div class="message" [class.from-admin]="message.fromAdmin">
+              <span class="author">{{ message.fromAdmin ? 'Admin' : message.authorName }}</span>
+              <p>{{ message.message }}</p>
+              <span class="time">{{ message.sentAt | date: 'short' }}</span>
+            </div>
+          }
+        </div>
+
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        }
+
+        <form class="composer" (ngSubmit)="send(draft)">
+          <mat-form-field appearance="outline" class="composer-field">
+            <input matInput name="draft" [(ngModel)]="draft" placeholder="Type a message…" [disabled]="sending()" />
+          </mat-form-field>
+          <button mat-icon-button color="primary" type="submit" [disabled]="sending()" aria-label="Send">
+            <mat-icon>send</mat-icon>
+          </button>
+        </form>
+      }
+    </div>
+  }
+
+  <button
+    mat-fab
+    color="primary"
+    class="chat-toggle"
+    type="button"
+    (click)="toggleOpen()"
+    [attr.aria-label]="open() ? 'Close chat with admin' : 'Open chat with admin'"
+  >
+    <mat-icon>{{ open() ? 'close' : 'chat' }}</mat-icon>
+  </button>
+</div>

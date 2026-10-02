@@ -6,7 +6,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
+import com.agencyvoyage.application.port.in.GetConversationCommand;
+import com.agencyvoyage.application.port.in.GetConversationUseCase;
 import com.agencyvoyage.application.port.in.ListContactMessagesUseCase;
+import com.agencyvoyage.application.port.in.ReplyToConversationCommand;
+import com.agencyvoyage.application.port.in.ReplyToConversationUseCase;
 import com.agencyvoyage.application.port.in.SendContactMessageCommand;
 import com.agencyvoyage.application.port.in.SendContactMessageUseCase;
 import com.agencyvoyage.domain.support.ContactMessage;
@@ -33,12 +37,19 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 class ContactMessageControllerTest {
 
     private static final User ALICE = new User(UserId.newId(), "alice@example.com", "Alice");
+    private static final User ADMIN = new User(UserId.newId(), "admin@example.com", "Admin", true);
 
     @Autowired
     private MockMvcTester mvc;
 
     @MockitoBean
     private SendContactMessageUseCase sendContactMessageUseCase;
+
+    @MockitoBean
+    private ReplyToConversationUseCase replyToConversationUseCase;
+
+    @MockitoBean
+    private GetConversationUseCase getConversationUseCase;
 
     @MockitoBean
     private ListContactMessagesUseCase listContactMessagesUseCase;
@@ -56,25 +67,25 @@ class ContactMessageControllerTest {
         ContactMessage message = new ContactMessage(
                 ContactMessageId.newId(),
                 ALICE.id(),
+                ALICE.id(),
                 ALICE.displayName(),
                 ALICE.email(),
-                "Help",
+                false,
                 "Where is my seat?",
                 Instant.now());
         when(sendContactMessageUseCase.sendMessage(any(SendContactMessageCommand.class))).thenReturn(message);
 
         assertThat(mvc.post()
                         .uri("/api/contact-messages")
-                        .with(asAlice())
+                        .with(asUser(ALICE))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"subject\":\"Help\",\"message\":\"Where is my seat?\"}"))
+                        .content("{\"message\":\"Where is my seat?\"}"))
                 .hasStatus(201)
                 .bodyJson()
-                .extractingPath("$.subject")
-                .isEqualTo("Help");
+                .extractingPath("$.message")
+                .isEqualTo("Where is my seat?");
 
-        verify(sendContactMessageUseCase)
-                .sendMessage(new SendContactMessageCommand(ALICE, "Help", "Where is my seat?"));
+        verify(sendContactMessageUseCase).sendMessage(new SendContactMessageCommand(ALICE, "Where is my seat?"));
     }
 
     @Test
@@ -82,8 +93,58 @@ class ContactMessageControllerTest {
         assertThat(mvc.post()
                         .uri("/api/contact-messages")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"subject\":\"Help\",\"message\":\"Where is my seat?\"}"))
+                        .content("{\"message\":\"Where is my seat?\"}"))
                 .hasStatus(401);
+    }
+
+    @Test
+    void replyReturns201WithTheStoredReplyAsJson() {
+        ContactMessage reply = new ContactMessage(
+                ContactMessageId.newId(),
+                ALICE.id(),
+                ADMIN.id(),
+                ADMIN.displayName(),
+                ADMIN.email(),
+                true,
+                "Seat 12A",
+                Instant.now());
+        when(replyToConversationUseCase.reply(any(ReplyToConversationCommand.class))).thenReturn(reply);
+
+        assertThat(mvc.post()
+                        .uri("/api/contact-messages/reply")
+                        .with(asUser(ADMIN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"conversationUserId\":\"" + ALICE.id() + "\",\"message\":\"Seat 12A\"}"))
+                .hasStatus(201)
+                .bodyJson()
+                .extractingPath("$.fromAdmin")
+                .isEqualTo(true);
+
+        verify(replyToConversationUseCase)
+                .reply(new ReplyToConversationCommand(ALICE.id(), ADMIN, "Seat 12A"));
+    }
+
+    @Test
+    void getConversationReturnsTheThreadAsJson() {
+        ContactMessage message = new ContactMessage(
+                ContactMessageId.newId(),
+                ALICE.id(),
+                ALICE.id(),
+                ALICE.displayName(),
+                ALICE.email(),
+                false,
+                "Where is my seat?",
+                Instant.now());
+        when(getConversationUseCase.getConversation(any(GetConversationCommand.class)))
+                .thenReturn(List.of(message));
+
+        assertThat(mvc.get()
+                        .uri("/api/contact-messages/conversations/" + ALICE.id())
+                        .with(asUser(ALICE)))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$[0].message")
+                .isEqualTo("Where is my seat?");
     }
 
     @Test
@@ -91,22 +152,23 @@ class ContactMessageControllerTest {
         ContactMessage message = new ContactMessage(
                 ContactMessageId.newId(),
                 ALICE.id(),
+                ALICE.id(),
                 ALICE.displayName(),
                 ALICE.email(),
-                "Help",
+                false,
                 "Where is my seat?",
                 Instant.now());
-        when(listContactMessagesUseCase.listMessages()).thenReturn(List.of(message));
+        when(listContactMessagesUseCase.listMessages(ADMIN)).thenReturn(List.of(message));
 
-        assertThat(mvc.get().uri("/api/contact-messages").with(asAlice()))
+        assertThat(mvc.get().uri("/api/contact-messages").with(asUser(ADMIN)))
                 .hasStatusOk()
                 .bodyJson()
-                .extractingPath("$[0].subject")
-                .isEqualTo("Help");
+                .extractingPath("$[0].message")
+                .isEqualTo("Where is my seat?");
     }
 
-    private static org.springframework.test.web.servlet.request.RequestPostProcessor asAlice() {
-        Authentication authentication = new UsernamePasswordAuthenticationToken(ALICE, null, List.of());
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor asUser(User user) {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
         return authentication(authentication);
     }
 }
