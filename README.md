@@ -90,9 +90,16 @@ variables), the custom theme and a handful of shared primitives supply the look:
   backdrop-blurred cards used across every page, with a baseline drop shadow so they
   read as elevated against `--page-base` even before any hover/focus state.
 - A `.gradient-text` mixin/utility for small-to-medium gradient-clipped text (price
-  figures, the nav brand) - deliberately **not** used for large bold headings, where
-  `background-clip: text` rendered a visible double-stroke artifact in testing; big
-  headlines use the `.accent-heading` utility (solid color + glow) instead.
+  figures, the nav brand, filled buttons) - deliberately **not** used for large bold
+  headings, where `background-clip: text` rendered a visible double-stroke artifact in
+  testing; big headlines use the `.accent-heading` utility (solid color + glow)
+  instead. The underlying `--gradient-aurora` stays within the primary color's own
+  tones (its pale dark-theme shade through to the much more saturated
+  `--mat-sys-inverse-primary`) rather than crossing into the tertiary accent -
+  blending two different hues in one gradient reliably drifts through a muddy
+  in-between on the way (tried with violet/orange, then blue/yellow - both produced
+  it), so tertiary is kept to small, solid, never-blended accents instead (status
+  dots, badges).
 - Staggered entrance animations (`fade-in-up` + per-card `animation-delay`) on the trip
   cards, a pulsing glow on an `OPEN` status badge, and glowing hover/focus states
   throughout, all layered on top of Material's own ripple and elevation.
@@ -241,7 +248,8 @@ into by this work - branches are merged in by hand, in order:
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
-`join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme`
+`join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme` →
+`dark-mode-redesign`
 
 ## Simplifications and next steps
 
