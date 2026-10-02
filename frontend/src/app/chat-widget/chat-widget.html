@@ -8,7 +8,13 @@
           </button>
         }
         <span class="chat-title">
-          {{ isAdmin() && !selectedConversationUserId() ? 'Conversations' : 'Chat with admin' }}
+          @if (isAdmin() && !selectedConversationUserId()) {
+            Conversations
+          } @else if (isAdmin()) {
+            Chat with {{ selectedConversationCustomerName() }}
+          } @else {
+            Chat with admin
+          }
         </span>
       </div>
 

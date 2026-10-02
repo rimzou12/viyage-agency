@@ -69,6 +69,8 @@ describe('ChatWidget', () => {
     httpMock.expectOne(`${API_BASE_URL}/api/contact-messages/conversations/alice-1`).flush([sampleMessage()]);
     fixture.detectChanges();
 
+    expect(compiled.querySelector('.chat-title')?.textContent).toContain('Chat with Alice');
+
     fixture.componentInstance['draft'] = 'Seat 12A';
     (compiled.querySelector('.composer') as HTMLFormElement).dispatchEvent(new Event('submit'));
     fixture.detectChanges();
