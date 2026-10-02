@@ -72,7 +72,7 @@ trail, and the live SSE update all pick it up for free.
 
 The frontend is built on **Angular Material** (`@angular/material`, Material 3 /
 `mat.theme()`) rather than hand-rolled components, but skinned with a custom dark
-"aurora" palette (`primary: $violet-palette`, `tertiary: $orange-palette`,
+"aurora" palette (`primary: $blue-palette`, `tertiary: $yellow-palette`,
 `theme-type: dark` in `src/styles.scss`) and type pairing (Sora for headings, Inter for
 body) instead of stock Material blue/Roboto - Material supplies the system (ripple,
 elevation, motion, the M3 color/typography token system via `--mat-sys-*` CSS
@@ -80,11 +80,11 @@ variables), the custom theme and a handful of shared primitives supply the look:
 
 - A slow-drifting animated gradient mesh behind every page (`body`'s
   `aurora-drift` keyframe), built from the theme's own generated colors via
-  `color-mix()` so it stays in harmony with whatever palette is active. It sits on its
-  own deep indigo-black base (`--page-base`, not the flatter `--mat-sys-surface`) with
-  each color bloom kept small and low-opacity - earlier the violet primary and orange
-  tertiary blooms overlapped at full strength and blended into a muddy brown instead of
-  reading as distinct glows.
+  `color-mix()` so it stays in harmony with whatever palette is active (an earlier
+  violet/orange pairing was swapped to blue/yellow). It sits on its own deep
+  indigo-black base (`--page-base`, not the flatter `--mat-sys-surface`) with each
+  color bloom kept small and low-opacity so they read as distinct glows rather than
+  blending into a muddy wash.
 - A `.glass-panel`/`glass-panel` Sass mixin (`src/styles/_mixins.scss`, `@use`d via
   `stylePreprocessorOptions.includePaths` in `angular.json`) for the frosted,
   backdrop-blurred cards used across every page, with a baseline drop shadow so they
@@ -241,7 +241,7 @@ into by this work - branches are merged in by hand, in order:
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
-`join-confirmation-email` → `dark-theme-polish-and-search`
+`join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme`
 
 ## Simplifications and next steps
 

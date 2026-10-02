@@ -9,8 +9,8 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$violet-palette,
-        tertiary: mat.$orange-palette,
+        primary: mat.$blue-palette,
+        tertiary: mat.$yellow-palette,
         theme-type: dark,
       ),
       typography: (
