@@ -80,10 +80,15 @@ variables), the custom theme and a handful of shared primitives supply the look:
 
 - A slow-drifting animated gradient mesh behind every page (`body`'s
   `aurora-drift` keyframe), built from the theme's own generated colors via
-  `color-mix()` so it stays in harmony with whatever palette is active.
+  `color-mix()` so it stays in harmony with whatever palette is active. It sits on its
+  own deep indigo-black base (`--page-base`, not the flatter `--mat-sys-surface`) with
+  each color bloom kept small and low-opacity - earlier the violet primary and orange
+  tertiary blooms overlapped at full strength and blended into a muddy brown instead of
+  reading as distinct glows.
 - A `.glass-panel`/`glass-panel` Sass mixin (`src/styles/_mixins.scss`, `@use`d via
   `stylePreprocessorOptions.includePaths` in `angular.json`) for the frosted,
-  backdrop-blurred cards used across every page.
+  backdrop-blurred cards used across every page, with a baseline drop shadow so they
+  read as elevated against `--page-base` even before any hover/focus state.
 - A `.gradient-text` mixin/utility for small-to-medium gradient-clipped text (price
   figures, the nav brand) - deliberately **not** used for large bold headings, where
   `background-clip: text` rendered a visible double-stroke artifact in testing; big
@@ -119,6 +124,9 @@ Reframing the kata's original group-purchase stories for trips:
   Admin page; any logged-in user can read the inbox back.
 - An admin can curate a hotel catalog per trip (name, description, photo URLs),
   visible to everyone browsing that trip; only an admin can add to it.
+- The trip catalog can be searched by name/description and filtered to trips running on
+  a chosen date (i.e. that date falls within the trip's departure-return window); both
+  filters combine and update the list live as you type or pick a date.
 
 ## Running it locally
 
@@ -233,7 +241,7 @@ into by this work - branches are merged in by hand, in order:
 `ci-pipelines` → `live-price-updates` → `leave-group-booking` → `authentication` →
 `ui-carousels` → `audit-trail` → `waitlist` → `referral-discounts` → `fancy-ui-redesign`
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
-`join-confirmation-email`
+`join-confirmation-email` → `dark-theme-polish-and-search`
 
 ## Simplifications and next steps
 
