@@ -6,19 +6,57 @@
   padding: 3rem 1.5rem 4rem;
 }
 
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 0.5rem 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+// A large, faint plane silhouette drifting behind the hero title - purely
+// decorative (aria-hidden), echoes the "group trips" travel theme without
+// competing with the heading text for attention.
+.hero-plane {
+  position: absolute;
+  top: -1.5rem;
+  right: -1rem;
+  width: clamp(140px, 22vw, 240px) !important;
+  height: clamp(140px, 22vw, 240px) !important;
+  font-size: clamp(140px, 22vw, 240px) !important;
+  color: var(--mat-sys-primary);
+  opacity: 0.1;
+  transform: rotate(35deg);
+  pointer-events: none;
+  animation: plane-drift 10s var(--ease-swift) infinite;
+  z-index: 0;
+}
+
 h1 {
-  margin: 0 0 0.35rem;
+  position: relative;
+  margin: 0 0 0.6rem;
   font-size: clamp(2.2rem, 4vw, 2.8rem);
   font-weight: 800;
 }
 
 .subtitle {
-  margin: 0 0 1.75rem;
+  position: relative;
+  margin: 0 0 2.25rem;
   color: var(--mat-sys-on-surface-variant);
   font-size: 1.05rem;
 }
 
+@keyframes plane-drift {
+  0%,
+  100% {
+    transform: rotate(35deg) translate(0, 0);
+  }
+  50% {
+    transform: rotate(35deg) translate(-14px, 10px);
+  }
+}
+
 .filters {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
