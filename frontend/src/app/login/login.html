@@ -1,19 +1,19 @@
 <main class="page">
   <div class="auth-card">
-    <h1 class="accent-heading">Welcome back</h1>
-    <p class="tagline">Log in to join your next adventure.</p>
+    <h1 class="accent-heading">{{ i18n.t('login.title') }}</h1>
+    <p class="tagline">{{ i18n.t('login.tagline') }}</p>
 
     <form (submit)="$event.preventDefault(); submit(emailInput.value, passwordInput.value)">
       <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
+        <mat-label>{{ i18n.t('login.email') }}</mat-label>
         <input matInput #emailInput type="email" required [disabled]="submitting()" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Password</mat-label>
+        <mat-label>{{ i18n.t('login.password') }}</mat-label>
         <input matInput #passwordInput type="password" required [disabled]="submitting()" />
       </mat-form-field>
       <button mat-flat-button type="submit" [disabled]="submitting()">
-        {{ submitting() ? 'Logging in...' : 'Log in' }}
+        {{ submitting() ? i18n.t('login.submitting') : i18n.t('login.submit') }}
       </button>
     </form>
 
@@ -21,6 +21,6 @@
       <p class="error">{{ error() }}</p>
     }
 
-    <p class="switch">No account yet? <a routerLink="/register">Register</a></p>
+    <p class="switch">{{ i18n.t('login.noAccount') }} <a routerLink="/register">{{ i18n.t('login.register') }}</a></p>
   </div>
 </main>

@@ -1,23 +1,23 @@
 <main class="page">
   <div class="auth-card">
-    <h1 class="accent-heading">Create an account</h1>
-    <p class="tagline">Join the group, pool together, pay less.</p>
+    <h1 class="accent-heading">{{ i18n.t('register.title') }}</h1>
+    <p class="tagline">{{ i18n.t('register.tagline') }}</p>
 
     <form (submit)="$event.preventDefault(); submit(nameInput.value, emailInput.value, passwordInput.value)">
       <mat-form-field appearance="outline">
-        <mat-label>Name</mat-label>
+        <mat-label>{{ i18n.t('register.name') }}</mat-label>
         <input matInput #nameInput type="text" required [disabled]="submitting()" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
+        <mat-label>{{ i18n.t('register.email') }}</mat-label>
         <input matInput #emailInput type="email" required [disabled]="submitting()" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Password</mat-label>
+        <mat-label>{{ i18n.t('register.password') }}</mat-label>
         <input matInput #passwordInput type="password" required minlength="8" [disabled]="submitting()" />
       </mat-form-field>
       <button mat-flat-button type="submit" [disabled]="submitting()">
-        {{ submitting() ? 'Creating account...' : 'Create account' }}
+        {{ submitting() ? i18n.t('register.submitting') : i18n.t('register.submit') }}
       </button>
     </form>
 
@@ -25,6 +25,8 @@
       <p class="error">{{ error() }}</p>
     }
 
-    <p class="switch">Already have an account? <a routerLink="/login">Log in</a></p>
+    <p class="switch">
+      {{ i18n.t('register.haveAccount') }} <a routerLink="/login">{{ i18n.t('register.logIn') }}</a>
+    </p>
   </div>
 </main>

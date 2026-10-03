@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../core/auth.service';
 import { ContactMessageService } from '../core/contact-message.service';
+import { I18nService } from '../core/i18n.service';
 import { apiErrorMessage } from '../core/group-booking.service';
 import { ContactMessage } from '../core/models';
 
@@ -31,6 +32,7 @@ const POLL_INTERVAL_MS = 5000;
 export class ChatWidget {
   private readonly auth = inject(AuthService);
   private readonly contactMessageService = inject(ContactMessageService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly isAdmin = computed(() => this.auth.currentUser()?.isAdmin ?? false);
 
@@ -100,7 +102,7 @@ export class ChatWidget {
       },
       error: (err: HttpErrorResponse) => {
         this.sending.set(false);
-        this.error.set(apiErrorMessage(err, 'Could not send your message.'));
+        this.error.set(apiErrorMessage(err, this.i18n.t('chat.error')));
       },
     });
   }

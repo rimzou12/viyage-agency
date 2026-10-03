@@ -1,24 +1,30 @@
 <main class="page">
   <div class="hero">
     <mat-icon class="hero-plane" aria-hidden="true">flight</mat-icon>
-    <h1 class="accent-heading">Group trips</h1>
-    <p class="subtitle">Join a group booking and the price per seat drops as more people sign up.</p>
+    <h1 class="accent-heading">{{ i18n.t('tripList.title') }}</h1>
+    <p class="subtitle">{{ i18n.t('tripList.subtitle') }}</p>
   </div>
 
   @if (!loading() && !error() && trips().length > 0) {
     <div class="filters">
       <mat-form-field appearance="outline" class="search">
         <mat-icon matPrefix>search</mat-icon>
-        <mat-label>Search by name</mat-label>
+        <mat-label>{{ i18n.t('tripList.searchLabel') }}</mat-label>
         <input
           matInput
           type="text"
           [ngModel]="searchTerm()"
           (ngModelChange)="searchTerm.set($event)"
-          placeholder="Try &quot;Bali&quot; or &quot;desert&quot;"
+          [placeholder]="i18n.t('tripList.searchPlaceholder')"
         />
         @if (searchTerm()) {
-          <button matSuffix mat-icon-button type="button" aria-label="Clear search" (click)="searchTerm.set('')">
+          <button
+            matSuffix
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="i18n.t('tripList.clearSearch')"
+            (click)="searchTerm.set('')"
+          >
             <mat-icon>close</mat-icon>
           </button>
         }
@@ -26,7 +32,7 @@
 
       <mat-form-field appearance="outline" class="availability">
         <mat-icon matPrefix>event_available</mat-icon>
-        <mat-label>Available on</mat-label>
+        <mat-label>{{ i18n.t('tripList.availabilityLabel') }}</mat-label>
         <input
           matInput
           [matDatepicker]="availabilityPicker"
@@ -39,7 +45,7 @@
             matSuffix
             mat-icon-button
             type="button"
-            aria-label="Clear date"
+            [attr.aria-label]="i18n.t('tripList.clearDate')"
             (click)="availabilityDate.set(null)"
           >
             <mat-icon>close</mat-icon>
@@ -54,16 +60,16 @@
   @if (loading()) {
     <div class="loading">
       <mat-spinner diameter="36" />
-      <p>Loading trips...</p>
+      <p>{{ i18n.t('tripList.loading') }}</p>
     </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (trips().length === 0) {
-    <p>No trips available right now.</p>
+    <p>{{ i18n.t('tripList.noTrips') }}</p>
   } @else if (filteredTrips().length === 0) {
     <p class="no-results">
-      No trips match these filters.
-      <button mat-button type="button" (click)="clearFilters()">Clear filters</button>
+      {{ i18n.t('tripList.noResults') }}
+      <button mat-button type="button" (click)="clearFilters()">{{ i18n.t('tripList.clearFilters') }}</button>
     </p>
   } @else {
     <div class="trip-grid">
@@ -75,11 +81,13 @@
             <p class="dates">{{ trip.departureDate | date }} &ndash; {{ trip.returnDate | date }}</p>
             <p class="description">{{ trip.description }}</p>
             <div class="price">
-              <span class="from">from</span>
+              <span class="from">{{ i18n.t('tripList.from') }}</span>
               <span class="amount">{{ startingPrice(trip) | currency }}</span>
-              <span class="per">per seat</span>
+              <span class="per">{{ i18n.t('tripList.perSeat') }}</span>
             </div>
-            <p class="group-size">{{ trip.minParticipants }}&ndash;{{ trip.maxParticipants }} travelers</p>
+            <p class="group-size">
+              {{ trip.minParticipants }}&ndash;{{ trip.maxParticipants }} {{ i18n.t('tripList.travelers') }}
+            </p>
           </div>
         </a>
       }
