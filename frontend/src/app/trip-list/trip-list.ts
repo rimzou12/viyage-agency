@@ -83,6 +83,10 @@ export class TripList {
     this.availabilityDate.set(null);
   }
 
+  protected scrollToResults(): void {
+    document.getElementById('results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   protected startingPrice(trip: Trip): number {
     const cheapestTier = trip.priceTiers.at(-1);
     return cheapestTier ? cheapestTier.pricePerSeat : trip.basePrice;

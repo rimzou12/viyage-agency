@@ -26,6 +26,7 @@ export const en: Record<string, string> = {
   'tripList.from': 'from',
   'tripList.perSeat': 'per seat',
   'tripList.travelers': 'travelers',
+  'tripList.searchCta': 'Search',
 
   // Login
   'login.title': 'Welcome back',
