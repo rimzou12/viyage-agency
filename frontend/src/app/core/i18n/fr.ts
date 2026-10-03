@@ -27,6 +27,7 @@ export const fr: Record<string, string> = {
   'tripList.from': 'à partir de',
   'tripList.perSeat': 'par place',
   'tripList.travelers': 'voyageurs',
+  'tripList.searchCta': 'Rechercher',
 
   // Login
   'login.title': 'Content de vous revoir',

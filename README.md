@@ -109,9 +109,14 @@ custom theme and a handful of shared primitives supply the look:
 - A full-bleed, cinematic homepage hero: a slow-crossfading photo backdrop (the
   existing `ImageCarousel`, reused with `pointer-events: none` so its own nav/dots
   stay inert as ambient background) behind a dark bottom-weighted gradient scrim, a
-  huge bold display headline, and a search bar that floats half over the hero's
-  bottom edge as a glass panel - the classic Airbnb/booking-site "start here" focal
-  point, replacing the earlier flat-color hero with a decorative plane icon.
+  huge bold display headline, and a pill-shaped search bar that floats half over the
+  hero's bottom edge - the classic Airbnb/booking-site "start here" focal point,
+  replacing the earlier flat-color hero with a decorative plane icon. The bar is a
+  true frosted-glass panel (low-opacity white + heavy blur, not the near-solid
+  `.glass-panel` used for ordinary content cards) so the photo keeps showing through
+  it, its Material fields are re-skinned fully pill-shaped (overriding the MDC
+  outline segments, since corner radius isn't exposed as a form-field input), and a
+  gradient `Search` button smooth-scrolls to the results.
 - A bento-style trip gallery (`trip-list`'s `.trip-grid`): a repeating 4-across CSS
   Grid where every fourth card spans the full row as a featured banner and the rest
   pair up at half width, instead of a uniform card grid - breaks visual monotony
@@ -301,7 +306,7 @@ into by this work - branches are merged in by hand, in order:
 `dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel` → `admin-chat-widget`
 → `chat-widget-show-customer-name` → `hero-plane-background` → `i18n-en-fr`
 → `admin-dashboard-i18n-and-polish` → `i18n-trip-and-booking-detail`
-→ `cinematic-editorial-homepage`
+→ `cinematic-editorial-homepage` → `fancy-hero-search-bar`
 
 ## Simplifications and next steps
 
