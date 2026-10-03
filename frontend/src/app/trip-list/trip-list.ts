@@ -3,9 +3,8 @@ import { RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripService } from '../core/trip.service';
 import { I18nService } from '../core/i18n.service';
@@ -22,10 +21,9 @@ import { ImageCarousel } from '../shared/image-carousel/image-carousel';
     DatePipe,
     FormsModule,
     ImageCarousel,
+    MatButtonModule,
     MatDatepickerModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatProgressSpinnerModule,
   ],
   templateUrl: './trip-list.html',

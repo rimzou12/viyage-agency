@@ -9,55 +9,52 @@
 
     @if (!loading() && !error() && trips().length > 0) {
       <div class="filters">
-        <mat-form-field appearance="outline" class="search">
-          <mat-icon matPrefix>search</mat-icon>
-          <mat-label>{{ i18n.t('tripList.searchLabel') }}</mat-label>
+        <label class="field search-field">
+          <mat-icon aria-hidden="true">search</mat-icon>
           <input
-            matInput
             type="text"
             [ngModel]="searchTerm()"
             (ngModelChange)="searchTerm.set($event)"
             [placeholder]="i18n.t('tripList.searchPlaceholder')"
+            [attr.aria-label]="i18n.t('tripList.searchLabel')"
           />
           @if (searchTerm()) {
             <button
-              matSuffix
-              mat-icon-button
               type="button"
+              class="clear"
               [attr.aria-label]="i18n.t('tripList.clearSearch')"
               (click)="searchTerm.set('')"
             >
               <mat-icon>close</mat-icon>
             </button>
           }
-        </mat-form-field>
+        </label>
 
         <span class="divider" aria-hidden="true"></span>
 
-        <mat-form-field appearance="outline" class="availability">
-          <mat-icon matPrefix>event_available</mat-icon>
-          <mat-label>{{ i18n.t('tripList.availabilityLabel') }}</mat-label>
+        <label class="field availability-field" (click)="availabilityPicker.open()">
+          <mat-icon aria-hidden="true">event_available</mat-icon>
           <input
-            matInput
+            type="text"
+            readonly
             [matDatepicker]="availabilityPicker"
             [ngModel]="availabilityDate()"
             (ngModelChange)="availabilityDate.set($event)"
-            placeholder="Any date"
+            [placeholder]="i18n.t('tripList.availabilityLabel')"
+            [attr.aria-label]="i18n.t('tripList.availabilityLabel')"
           />
           @if (availabilityDate()) {
             <button
-              matSuffix
-              mat-icon-button
               type="button"
+              class="clear"
               [attr.aria-label]="i18n.t('tripList.clearDate')"
-              (click)="availabilityDate.set(null)"
+              (click)="availabilityDate.set(null); $event.stopPropagation()"
             >
               <mat-icon>close</mat-icon>
             </button>
           }
-          <mat-datepicker-toggle matIconSuffix [for]="availabilityPicker" />
           <mat-datepicker #availabilityPicker />
-        </mat-form-field>
+        </label>
 
         <button mat-flat-button type="button" class="search-cta" (click)="scrollToResults()">
           <mat-icon>search</mat-icon>
