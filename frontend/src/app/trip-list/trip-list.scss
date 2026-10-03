@@ -3,64 +3,92 @@
 .page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 3rem 1.5rem 4rem;
+  padding: 0 1.5rem 4rem;
 }
 
+// Full-bleed cinematic hero: breaks out of .page's max-width via the
+// classic negative-viewport-margin trick so the background photography
+// spans the entire browser width regardless of the content column below it.
 .hero {
   position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  height: min(72vh, 680px);
+  min-height: 460px;
   overflow: hidden;
-  padding: 0.5rem 0 1rem;
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin-bottom: 3.5rem;
 }
 
-// A large, faint plane silhouette drifting behind the hero title - purely
-// decorative (aria-hidden), echoes the "group trips" travel theme without
-// competing with the heading text for attention.
-.hero-plane {
+.hero-bg {
   position: absolute;
-  top: -1.5rem;
-  right: -1rem;
-  width: clamp(140px, 22vw, 240px) !important;
-  height: clamp(140px, 22vw, 240px) !important;
-  font-size: clamp(140px, 22vw, 240px) !important;
-  color: var(--mat-sys-primary);
-  opacity: 0.1;
-  transform: rotate(35deg);
-  pointer-events: none;
-  animation: plane-drift 10s var(--ease-swift) infinite;
+  inset: 0;
   z-index: 0;
+  // Purely ambient background - disables the carousel's own hover-revealed
+  // nav arrows/dots (they're meant for the small trip-card carousels, not
+  // a full-bleed backdrop).
+  pointer-events: none;
 }
 
-h1 {
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    rgba(20, 12, 6, 0.82) 0%,
+    rgba(20, 12, 6, 0.45) 40%,
+    rgba(20, 12, 6, 0.08) 70%
+  );
+}
+
+.hero-content {
   position: relative;
-  margin: 0 0 0.6rem;
-  font-size: clamp(2.2rem, 4vw, 2.8rem);
+  z-index: 2;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem 2.5rem;
+  color: #fff;
+}
+
+.hero-title {
+  margin: 0 0 0.5rem;
+  font-family: 'Sora', sans-serif;
   font-weight: 800;
+  font-size: clamp(2.8rem, 7vw, 5.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
 }
 
-.subtitle {
-  position: relative;
-  margin: 0 0 2.25rem;
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 1.05rem;
+.hero-subtitle {
+  margin: 0;
+  max-width: 36rem;
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
 }
 
-@keyframes plane-drift {
-  0%,
-  100% {
-    transform: rotate(35deg) translate(0, 0);
-  }
-  50% {
-    transform: rotate(35deg) translate(-14px, 10px);
-  }
-}
-
+// The search bar floats half over the hero's bottom edge, Airbnb/booking.com
+// style - lifts it off the photo as a focal "start here" control instead of
+// a plain inline form.
 .filters {
   position: relative;
+  z-index: 3;
+  align-self: center;
+  width: min(100%, 760px);
+  margin: 1.75rem auto 0;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 1.75rem;
+  padding: 1.1rem 1.25rem;
+  animation: fade-in-up 0.6s var(--ease-swift) 0.15s backwards;
 
   mat-icon[matPrefix] {
     margin-right: 0.5rem;
@@ -96,15 +124,27 @@ h1 {
   color: var(--mat-sys-error);
 }
 
+// Bento-style gallery: a repeating 4-across pattern where every fourth card
+// (index 0, 4, 8...) spans the full row as a "featured" banner and the rest
+// pair up at half width - breaks the monotony of a uniform card grid without
+// hardcoding specific trips, so it scales to any list length.
 .trip-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 190px;
+  gap: 1.25rem;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
 }
 
 .trip-card {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   overflow: hidden;
   border-radius: 20px;
   text-decoration: none;
@@ -120,6 +160,33 @@ h1 {
     transform 0.35s var(--ease-swift),
     box-shadow 0.35s var(--ease-swift),
     border-color 0.35s var(--ease-swift);
+
+  grid-column: span 2;
+  grid-row: span 2;
+
+  &.featured {
+    grid-column: span 4;
+    grid-row: span 2;
+
+    .card-photo {
+      flex-basis: 65%;
+    }
+
+    h2 {
+      font-size: 1.6rem;
+    }
+  }
+
+  @media (max-width: 720px) {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    height: auto;
+
+    .card-photo {
+      height: 200px;
+      flex: none;
+    }
+  }
 
   @for $i from 1 through 9 {
     &:nth-child(#{$i}) {
@@ -138,10 +205,12 @@ h1 {
   }
 
   .card-photo {
-    height: 180px;
+    flex: 1 1 50%;
+    min-height: 120px;
   }
 
   .card-body {
+    flex: 0 0 auto;
     padding: 1.2rem 1.3rem 1.4rem;
   }
 
@@ -162,6 +231,10 @@ h1 {
     font-size: 0.95rem;
     line-height: 1.45;
     color: var(--mat-sys-on-surface-variant);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .price {

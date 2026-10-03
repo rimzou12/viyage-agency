@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripService } from '../core/trip.service';
 import { I18nService } from '../core/i18n.service';
 import { Trip } from '../core/models';
-import { tripPhotoUrls } from '../core/photos';
+import { heroPhotoUrls, tripPhotoUrls } from '../core/photos';
 import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 
 @Component({
@@ -35,6 +35,7 @@ import { ImageCarousel } from '../shared/image-carousel/image-carousel';
 export class TripList {
   private readonly tripService = inject(TripService);
   protected readonly i18n = inject(I18nService);
+  protected readonly heroPhotos = heroPhotoUrls(5);
 
   protected readonly trips = signal<Trip[]>([]);
   protected readonly loading = signal(true);

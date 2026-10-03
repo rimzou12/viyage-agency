@@ -106,8 +106,17 @@ custom theme and a handful of shared primitives supply the look:
 - Staggered entrance animations (`fade-in-up` + per-card `animation-delay`) on the trip
   cards, a pulsing glow on an `OPEN` status badge, and glowing hover/focus states
   throughout, all layered on top of Material's own ripple and elevation.
-- A large, low-opacity, slowly drifting `flight` icon behind the trip-list hero
-  heading - purely decorative (`aria-hidden`), echoing the travel theme.
+- A full-bleed, cinematic homepage hero: a slow-crossfading photo backdrop (the
+  existing `ImageCarousel`, reused with `pointer-events: none` so its own nav/dots
+  stay inert as ambient background) behind a dark bottom-weighted gradient scrim, a
+  huge bold display headline, and a search bar that floats half over the hero's
+  bottom edge as a glass panel - the classic Airbnb/booking-site "start here" focal
+  point, replacing the earlier flat-color hero with a decorative plane icon.
+- A bento-style trip gallery (`trip-list`'s `.trip-grid`): a repeating 4-across CSS
+  Grid where every fourth card spans the full row as a featured banner and the rest
+  pair up at half width, instead of a uniform card grid - breaks visual monotony
+  without hardcoding which trips get the "featured" treatment, so it scales to any
+  list length. Collapses to a single column below 720px.
 
 ### Language switching (English / French)
 
@@ -292,6 +301,7 @@ into by this work - branches are merged in by hand, in order:
 `dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel` → `admin-chat-widget`
 → `chat-widget-show-customer-name` → `hero-plane-background` → `i18n-en-fr`
 → `admin-dashboard-i18n-and-polish` → `i18n-trip-and-booking-detail`
+→ `cinematic-editorial-homepage`
 
 ## Simplifications and next steps
 
