@@ -106,6 +106,23 @@ custom theme and a handful of shared primitives supply the look:
 - Staggered entrance animations (`fade-in-up` + per-card `animation-delay`) on the trip
   cards, a pulsing glow on an `OPEN` status badge, and glowing hover/focus states
   throughout, all layered on top of Material's own ripple and elevation.
+- A large, low-opacity, slowly drifting `flight` icon behind the trip-list hero
+  heading - purely decorative (`aria-hidden`), echoing the travel theme.
+
+### Language switching (English / French)
+
+A lightweight, home-grown `I18nService` (`frontend/src/app/core/i18n.service.ts`) -
+not Angular's built-in i18n package, which compiles a separate bundle per locale and
+can't switch at runtime - holds the active language as a signal, two flat
+key→string dictionaries (`core/i18n/en.ts`, `core/i18n/fr.ts`), and a `t(key, params?)`
+lookup method with `{{param}}` interpolation. Components call `i18n.t('some.key')`
+directly in their templates (no custom pipe); since `t()` reads the `lang` signal
+internally, any OnPush component whose template calls it is automatically
+re-rendered the moment the language changes, without needing `markForCheck()`
+anywhere. The choice is persisted to `localStorage` and a 🇬🇧/🇫🇷 flag pair in the
+header toolbar (`app.html`) switches it instantly, no page reload. Currently wired up
+for the header nav/footer, the trip list, login/register, and the chat widget - see
+Simplifications for what isn't translated yet.
 
 ## Business rules
 
@@ -273,6 +290,7 @@ into by this work - branches are merged in by hand, in order:
 → `hotel-reservation-and-contact-admin` → `admin-hotel-catalog` →
 `join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme` →
 `dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel` → `admin-chat-widget`
+→ `chat-widget-show-customer-name` → `hero-plane-background` → `i18n-en-fr`
 
 ## Simplifications and next steps
 
@@ -304,6 +322,12 @@ Documented deliberately, not accidentally missed:
   frontend's `tripPhotoUrls` generates a deterministic picsum.photos set per trip id
   (same trip always gets the same photos) so the carousels have something to show;
   there's no real photo library or upload flow wired up.
+- **English/French translation covers the main pages, not the whole app.** The header
+  nav/footer, trip list, login/register, and chat widget are fully bilingual; the trip
+  detail, group-booking detail, hotel forms, admin dashboard, and all backend-returned
+  error messages are still English-only. Adding a page to the dictionary is
+  mechanical (add keys to both `core/i18n/en.ts` and `core/i18n/fr.ts`, call
+  `i18n.t('key')` in the template) - just not done everywhere yet.
 - **The audit trail has no replay/backfill path.** It's built purely from events
   consumed going forward; if `audit_event` were ever dropped or a booking existed
   before this feature shipped, its earlier history is gone rather than reconstructible

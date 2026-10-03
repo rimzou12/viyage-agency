@@ -1,19 +1,41 @@
 <mat-toolbar class="nav">
   <a class="brand gradient-text" routerLink="/">Agency Voyage</a>
   <span class="spacer"></span>
+  <div class="lang-switch" role="group" aria-label="Choose language">
+    <button
+      type="button"
+      class="lang-flag"
+      [class.active]="i18n.lang() === 'en'"
+      [attr.aria-pressed]="i18n.lang() === 'en'"
+      aria-label="English"
+      (click)="setLang('en')"
+    >
+      🇬🇧
+    </button>
+    <button
+      type="button"
+      class="lang-flag"
+      [class.active]="i18n.lang() === 'fr'"
+      [attr.aria-pressed]="i18n.lang() === 'fr'"
+      aria-label="Français"
+      (click)="setLang('fr')"
+    >
+      🇫🇷
+    </button>
+  </div>
   <div class="account">
     @if (auth.isLoggedIn()) {
       @if (auth.currentUser()?.isAdmin) {
-        <a routerLink="/admin">Admin dashboard</a>
+        <a routerLink="/admin">{{ i18n.t('nav.adminDashboard') }}</a>
       }
-      <span class="hello">Hi, {{ auth.currentUser()?.displayName }}</span>
+      <span class="hello">{{ i18n.t('nav.hello', { name: auth.currentUser()?.displayName ?? '' }) }}</span>
       <button mat-stroked-button type="button" (click)="logout()">
         <mat-icon>logout</mat-icon>
-        Log out
+        {{ i18n.t('nav.logOut') }}
       </button>
     } @else {
-      <a routerLink="/login">Log in</a>
-      <a routerLink="/register" mat-flat-button class="register">Register</a>
+      <a routerLink="/login">{{ i18n.t('nav.logIn') }}</a>
+      <a routerLink="/register" mat-flat-button class="register">{{ i18n.t('nav.register') }}</a>
     }
   </div>
 </mat-toolbar>
@@ -24,16 +46,16 @@
   <div class="footer-content">
     <div class="footer-brand">
       <span class="brand gradient-text">Agency Voyage</span>
-      <p>Group trips, organized together.</p>
+      <p>{{ i18n.t('footer.tagline') }}</p>
     </div>
     <div class="footer-contact">
-      <h3>Contact</h3>
+      <h3>{{ i18n.t('footer.contact') }}</h3>
       <p><a href="mailto:support&#64;agencyvoyage.example">support&#64;agencyvoyage.example</a></p>
       <p><a href="tel:+15551234567">+1 (555) 123-4567</a></p>
       <p>123 Travel Street, San Francisco, CA</p>
     </div>
   </div>
-  <p class="footer-copyright">&copy; {{ currentYear }} Agency Voyage. All rights reserved.</p>
+  <p class="footer-copyright">{{ i18n.t('footer.copyright', { year: currentYear }) }}</p>
 </footer>
 
 @if (auth.isLoggedIn()) {

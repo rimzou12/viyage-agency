@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../core/auth.service';
+import { I18nService } from '../core/i18n.service';
 import { apiErrorMessage } from '../core/group-booking.service';
 
 @Component({
@@ -19,6 +20,7 @@ export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -37,7 +39,7 @@ export class Login {
       },
       error: (err: HttpErrorResponse) => {
         this.submitting.set(false);
-        this.error.set(apiErrorMessage(err, 'Could not log in.'));
+        this.error.set(apiErrorMessage(err, this.i18n.t('login.error')));
       },
     });
   }

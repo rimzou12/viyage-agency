@@ -3,17 +3,22 @@
     <div class="chat-panel">
       <div class="chat-header">
         @if (isAdmin() && selectedConversationUserId()) {
-          <button mat-icon-button type="button" (click)="backToConversationList()" aria-label="Back to conversations">
+          <button
+            mat-icon-button
+            type="button"
+            (click)="backToConversationList()"
+            [attr.aria-label]="i18n.t('chat.backAria')"
+          >
             <mat-icon>arrow_back</mat-icon>
           </button>
         }
         <span class="chat-title">
           @if (isAdmin() && !selectedConversationUserId()) {
-            Conversations
+            {{ i18n.t('chat.conversations') }}
           } @else if (isAdmin()) {
-            Chat with {{ selectedConversationCustomerName() }}
+            {{ i18n.t('chat.withCustomer', { name: selectedConversationCustomerName() ?? '' }) }}
           } @else {
-            Chat with admin
+            {{ i18n.t('chat.withAdmin') }}
           }
         </span>
       </div>
@@ -21,7 +26,7 @@
       @if (isAdmin() && !selectedConversationUserId()) {
         <div class="conversation-list">
           @if (conversations().length === 0) {
-            <p class="empty">No conversations yet.</p>
+            <p class="empty">{{ i18n.t('chat.noConversations') }}</p>
           }
           @for (conversation of conversations(); track conversation.conversationUserId) {
             <button
@@ -38,13 +43,13 @@
       } @else {
         <div class="messages">
           @if (loadingMessages() && messages().length === 0) {
-            <p class="empty">Loading…</p>
+            <p class="empty">{{ i18n.t('chat.loading') }}</p>
           } @else if (messages().length === 0) {
-            <p class="empty">No messages yet. Say hello!</p>
+            <p class="empty">{{ i18n.t('chat.noMessages') }}</p>
           }
           @for (message of messages(); track message.id) {
             <div class="message" [class.from-admin]="message.fromAdmin">
-              <span class="author">{{ message.fromAdmin ? 'Admin' : message.authorName }}</span>
+              <span class="author">{{ message.fromAdmin ? i18n.t('chat.admin') : message.authorName }}</span>
               <p>{{ message.message }}</p>
               <span class="time">{{ message.sentAt | date: 'short' }}</span>
             </div>
@@ -57,9 +62,21 @@
 
         <form class="composer" (ngSubmit)="send(draft)">
           <mat-form-field appearance="outline" class="composer-field">
-            <input matInput name="draft" [(ngModel)]="draft" placeholder="Type a message…" [disabled]="sending()" />
+            <input
+              matInput
+              name="draft"
+              [(ngModel)]="draft"
+              [placeholder]="i18n.t('chat.placeholder')"
+              [disabled]="sending()"
+            />
           </mat-form-field>
-          <button mat-icon-button color="primary" type="submit" [disabled]="sending()" aria-label="Send">
+          <button
+            mat-icon-button
+            color="primary"
+            type="submit"
+            [disabled]="sending()"
+            [attr.aria-label]="i18n.t('chat.send')"
+          >
             <mat-icon>send</mat-icon>
           </button>
         </form>
@@ -73,7 +90,7 @@
     class="chat-toggle"
     type="button"
     (click)="toggleOpen()"
-    [attr.aria-label]="open() ? 'Close chat with admin' : 'Open chat with admin'"
+    [attr.aria-label]="open() ? i18n.t('chat.closeAria') : i18n.t('chat.openAria')"
   >
     <mat-icon>{{ open() ? 'close' : 'chat' }}</mat-icon>
   </button>
