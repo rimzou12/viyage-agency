@@ -1,61 +1,64 @@
 <main class="page">
-  <div class="hero">
-    <mat-icon class="hero-plane" aria-hidden="true">flight</mat-icon>
-    <h1 class="accent-heading">{{ i18n.t('tripList.title') }}</h1>
-    <p class="subtitle">{{ i18n.t('tripList.subtitle') }}</p>
-  </div>
-
-  @if (!loading() && !error() && trips().length > 0) {
-    <div class="filters">
-      <mat-form-field appearance="outline" class="search">
-        <mat-icon matPrefix>search</mat-icon>
-        <mat-label>{{ i18n.t('tripList.searchLabel') }}</mat-label>
-        <input
-          matInput
-          type="text"
-          [ngModel]="searchTerm()"
-          (ngModelChange)="searchTerm.set($event)"
-          [placeholder]="i18n.t('tripList.searchPlaceholder')"
-        />
-        @if (searchTerm()) {
-          <button
-            matSuffix
-            mat-icon-button
-            type="button"
-            [attr.aria-label]="i18n.t('tripList.clearSearch')"
-            (click)="searchTerm.set('')"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="availability">
-        <mat-icon matPrefix>event_available</mat-icon>
-        <mat-label>{{ i18n.t('tripList.availabilityLabel') }}</mat-label>
-        <input
-          matInput
-          [matDatepicker]="availabilityPicker"
-          [ngModel]="availabilityDate()"
-          (ngModelChange)="availabilityDate.set($event)"
-          placeholder="Any date"
-        />
-        @if (availabilityDate()) {
-          <button
-            matSuffix
-            mat-icon-button
-            type="button"
-            [attr.aria-label]="i18n.t('tripList.clearDate')"
-            (click)="availabilityDate.set(null)"
-          >
-            <mat-icon>close</mat-icon>
-          </button>
-        }
-        <mat-datepicker-toggle matIconSuffix [for]="availabilityPicker" />
-        <mat-datepicker #availabilityPicker />
-      </mat-form-field>
+  <section class="hero">
+    <app-image-carousel class="hero-bg" [images]="heroPhotos" [autoplayMs]="6000" />
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">{{ i18n.t('tripList.title') }}</h1>
+      <p class="hero-subtitle">{{ i18n.t('tripList.subtitle') }}</p>
     </div>
-  }
+
+    @if (!loading() && !error() && trips().length > 0) {
+      <div class="filters glass-panel">
+        <mat-form-field appearance="outline" class="search">
+          <mat-icon matPrefix>search</mat-icon>
+          <mat-label>{{ i18n.t('tripList.searchLabel') }}</mat-label>
+          <input
+            matInput
+            type="text"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            [placeholder]="i18n.t('tripList.searchPlaceholder')"
+          />
+          @if (searchTerm()) {
+            <button
+              matSuffix
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="i18n.t('tripList.clearSearch')"
+              (click)="searchTerm.set('')"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="availability">
+          <mat-icon matPrefix>event_available</mat-icon>
+          <mat-label>{{ i18n.t('tripList.availabilityLabel') }}</mat-label>
+          <input
+            matInput
+            [matDatepicker]="availabilityPicker"
+            [ngModel]="availabilityDate()"
+            (ngModelChange)="availabilityDate.set($event)"
+            placeholder="Any date"
+          />
+          @if (availabilityDate()) {
+            <button
+              matSuffix
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="i18n.t('tripList.clearDate')"
+              (click)="availabilityDate.set(null)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+          <mat-datepicker-toggle matIconSuffix [for]="availabilityPicker" />
+          <mat-datepicker #availabilityPicker />
+        </mat-form-field>
+      </div>
+    }
+  </section>
 
   @if (loading()) {
     <div class="loading">
@@ -73,8 +76,8 @@
     </p>
   } @else {
     <div class="trip-grid">
-      @for (trip of filteredTrips(); track trip.id) {
-        <a class="trip-card" [routerLink]="['/trips', trip.id]">
+      @for (trip of filteredTrips(); track trip.id; let i = $index) {
+        <a class="trip-card" [class.featured]="i % 4 === 0" [routerLink]="['/trips', trip.id]">
           <app-image-carousel class="card-photo" [images]="photos(trip)" />
           <div class="card-body">
             <h2>{{ trip.destination }}</h2>
