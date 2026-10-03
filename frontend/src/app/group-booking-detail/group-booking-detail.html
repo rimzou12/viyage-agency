@@ -1,51 +1,58 @@
 <main class="page">
-  <a class="back" routerLink="/">&larr; All trips</a>
+  <a class="back" routerLink="/">&larr; {{ i18n.t('common.allTrips') }}</a>
 
   @if (loading()) {
     <div class="loading">
       <mat-spinner diameter="36" />
-      <p>Loading group booking...</p>
+      <p>{{ i18n.t('booking.loading') }}</p>
     </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (booking(); as b) {
-    <h1>Group booking</h1>
+    <h1>{{ i18n.t('booking.title') }}</h1>
     <span class="status" [class]="b.status.toLowerCase()">{{ b.status }}</span>
 
     <div class="stats">
       <div class="stat">
-        <span class="label">Participants</span>
+        <span class="label">{{ i18n.t('booking.participants') }}</span>
         <span class="value">{{ b.participantCount }} / {{ b.maxParticipants }}</span>
       </div>
       <div class="stat">
-        <span class="label">Current price per seat</span>
+        <span class="label">{{ i18n.t('booking.currentPrice') }}</span>
         <span class="value price">{{ b.currentPricePerSeat | currency }}</span>
       </div>
       @if (b.myPricePerSeat !== null) {
         <div class="stat">
-          <span class="label">Your price per seat</span>
+          <span class="label">{{ i18n.t('booking.yourPrice') }}</span>
           <span class="value price">{{ b.myPricePerSeat | currency }}</span>
           @if (referralSavings() > 0) {
-            <span class="savings">{{ referralSavings() | currency }} off from referrals</span>
+            <span class="savings">{{ referralSavings() | currency }} {{ i18n.t('booking.off') }}</span>
           }
         </div>
       }
       <div class="stat">
-        <span class="label">Booking closes</span>
+        <span class="label">{{ i18n.t('booking.bookingCloses') }}</span>
         <span class="value">{{ b.deadline | date: 'medium' }}</span>
       </div>
     </div>
 
     @if (b.status === 'OPEN') {
       @if (seatsUntilNextTier(b); as seatsToGo) {
-        <p class="hint">{{ seatsToGo }} more {{ seatsToGo === 1 ? 'person' : 'people' }} needed to unlock the next price drop.</p>
+        <p class="hint">
+          {{
+            i18n.t('booking.seatsToGoHint', {
+              count: seatsToGo,
+              unit: seatsToGo === 1 ? i18n.t('booking.person') : i18n.t('booking.people'),
+            })
+          }}
+        </p>
       }
 
       @if (myParticipantId()) {
         <section class="mine">
-          <p>You're in this group.</p>
+          <p>{{ i18n.t('booking.inGroup') }}</p>
           <button mat-stroked-button type="button" class="leave" [disabled]="leaving()" (click)="leave()">
-            {{ leaving() ? 'Leaving...' : 'Leave this group' }}
+            {{ leaving() ? i18n.t('booking.leaving') : i18n.t('booking.leaveGroup') }}
           </button>
           @if (leaveError()) {
             <p class="error">{{ leaveError() }}</p>
@@ -53,26 +60,30 @@
         </section>
 
         <section class="invite">
-          <h2>Invite friends</h2>
-          <p>Share your link - you and your friend both get $50 off when they join.</p>
+          <h2>{{ i18n.t('booking.inviteFriends') }}</h2>
+          <p>{{ i18n.t('booking.inviteHint') }}</p>
           <div class="link-row">
             <input type="text" readonly [value]="inviteLink()" />
             <button mat-flat-button type="button" (click)="copyInviteLink()">
               <mat-icon>{{ linkCopied() ? 'check' : 'content_copy' }}</mat-icon>
-              {{ linkCopied() ? 'Copied!' : 'Copy link' }}
+              {{ linkCopied() ? i18n.t('booking.copied') : i18n.t('booking.copyLink') }}
             </button>
           </div>
         </section>
       } @else if (seatsRemaining(b) > 0) {
         <section class="join">
-          <h2>Join this group</h2>
+          <h2>{{ i18n.t('booking.joinGroup') }}</h2>
           @if (auth.isLoggedIn()) {
             <button mat-flat-button type="button" [disabled]="joining()" (click)="join()">
-              {{ joining() ? 'Joining...' : 'Join as ' + auth.currentUser()?.displayName }}
+              {{
+                joining()
+                  ? i18n.t('booking.joining')
+                  : i18n.t('booking.joinAs', { name: auth.currentUser()?.displayName ?? '' })
+              }}
             </button>
           } @else {
             <a mat-flat-button class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
-              Log in to join
+              {{ i18n.t('booking.loginToJoin') }}
             </a>
           }
           @if (joinError()) {
@@ -81,10 +92,10 @@
         </section>
       } @else if (myWaitlistEntryId()) {
         <section class="mine waitlisted">
-          <p class="full">This group is full.</p>
-          <p>You're #{{ myWaitlistPosition() }} on the waitlist - you'll get a seat automatically if one opens up.</p>
+          <p class="full">{{ i18n.t('booking.full') }}</p>
+          <p>{{ i18n.t('booking.waitlistPosition', { position: myWaitlistPosition() ?? 0 }) }}</p>
           <button mat-stroked-button type="button" class="leave" [disabled]="leavingWaitlist()" (click)="leaveWaitlist()">
-            {{ leavingWaitlist() ? 'Leaving...' : 'Leave the waitlist' }}
+            {{ leavingWaitlist() ? i18n.t('booking.leavingWaitlist') : i18n.t('booking.leaveWaitlist') }}
           </button>
           @if (leaveWaitlistError()) {
             <p class="error">{{ leaveWaitlistError() }}</p>
@@ -92,14 +103,14 @@
         </section>
       } @else {
         <section class="join waitlist-join">
-          <p class="full">This group is full.</p>
+          <p class="full">{{ i18n.t('booking.full') }}</p>
           @if (auth.isLoggedIn()) {
             <button mat-flat-button type="button" [disabled]="joiningWaitlist()" (click)="joinWaitlist()">
-              {{ joiningWaitlist() ? 'Joining waitlist...' : 'Join the waitlist' }}
+              {{ joiningWaitlist() ? i18n.t('booking.joiningWaitlist') : i18n.t('booking.joinWaitlist') }}
             </button>
           } @else {
             <a mat-flat-button class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/group-bookings/' + b.id }">
-              Log in to join the waitlist
+              {{ i18n.t('booking.loginToJoinWaitlist') }}
             </a>
           }
           @if (joinWaitlistError()) {
@@ -111,11 +122,11 @@
 
     @if (b.status === 'CONFIRMED' && auth.isLoggedIn()) {
       <section class="hotel-reservation">
-        <h2>Hotel reservation</h2>
+        <h2>{{ i18n.t('booking.hotelReservation') }}</h2>
         @if (b.hotelReservationStatus === 'NOT_REQUESTED') {
-          <p>Once you have a reservation with the hotel, record its reference here.</p>
+          <p>{{ i18n.t('booking.recordReservationHint') }}</p>
           <mat-form-field appearance="outline">
-            <mat-label>Reservation reference</mat-label>
+            <mat-label>{{ i18n.t('booking.reservationReference') }}</mat-label>
             <input matInput [ngModel]="hotelReference()" (ngModelChange)="hotelReference.set($event)" />
           </mat-form-field>
           <button
@@ -124,39 +135,45 @@
             [disabled]="requestingReservation() || !hotelReference().trim()"
             (click)="requestHotelReservation()"
           >
-            {{ requestingReservation() ? 'Saving...' : 'Request reservation' }}
+            {{ requestingReservation() ? i18n.t('booking.saving') : i18n.t('booking.requestReservation') }}
           </button>
           @if (requestReservationError()) {
             <p class="error">{{ requestReservationError() }}</p>
           }
         } @else if (b.hotelReservationStatus === 'PENDING') {
-          <p>Reservation reference <strong>{{ b.hotelReservationReference }}</strong> is pending confirmation.</p>
+          <p>
+            {{ i18n.t('booking.pendingConfirmationPrefix') }}
+            <strong>{{ b.hotelReservationReference }}</strong>
+            {{ i18n.t('booking.pendingConfirmationSuffix') }}
+          </p>
           <button mat-flat-button type="button" [disabled]="confirmingReservation()" (click)="confirmHotelReservation()">
-            {{ confirmingReservation() ? 'Confirming...' : 'Confirm reservation' }}
+            {{ confirmingReservation() ? i18n.t('booking.confirming') : i18n.t('booking.confirmReservation') }}
           </button>
-          <p class="hint">Confirming emails every traveler in this group.</p>
+          <p class="hint">{{ i18n.t('booking.confirmEmailsHint') }}</p>
           @if (confirmReservationError()) {
             <p class="error">{{ confirmReservationError() }}</p>
           }
         } @else {
           <p class="full">
-            Reservation <strong>{{ b.hotelReservationReference }}</strong> is confirmed - every traveler has been emailed.
+            {{ i18n.t('booking.reservationConfirmedPrefix') }}
+            <strong>{{ b.hotelReservationReference }}</strong>
+            {{ i18n.t('booking.reservationConfirmedSuffix') }}
           </p>
         }
       </section>
     }
 
     <section class="participants">
-      <h2>Who's in</h2>
+      <h2>{{ i18n.t('booking.whosIn') }}</h2>
       <ul>
         @for (participant of b.participants; track participant.id) {
           <li>
             {{ participant.customerName }}
             @if (participant.id === myParticipantId()) {
-              <span class="you">you</span>
+              <span class="you">{{ i18n.t('booking.you') }}</span>
             }
             @if (referrerName(participant, b); as name) {
-              <span class="referred">via {{ name }}</span>
+              <span class="referred">{{ i18n.t('booking.via', { name }) }}</span>
             }
           </li>
         }
@@ -165,14 +182,14 @@
 
     @if (b.waitlist.length > 0) {
       <section class="waitlist">
-        <h2>Waitlist</h2>
+        <h2>{{ i18n.t('booking.waitlist') }}</h2>
         <ol>
           @for (entry of b.waitlist; track entry.id; let i = $index) {
             <li>
               <span class="position">{{ i + 1 }}</span>
               {{ entry.customerName }}
               @if (entry.id === myWaitlistEntryId()) {
-                <span class="you">you</span>
+                <span class="you">{{ i18n.t('booking.you') }}</span>
               }
             </li>
           }
@@ -182,7 +199,7 @@
 
     @if (auditTrail().length > 0) {
       <section class="history">
-        <h2>History</h2>
+        <h2>{{ i18n.t('booking.history') }}</h2>
         <ol>
           @for (event of auditTrailNewestFirst(); track $index) {
             <li [class]="event.type.toLowerCase().replace('participant_', '')">

@@ -1,10 +1,10 @@
 <main class="page">
-  <a class="back" routerLink="/">&larr; All trips</a>
+  <a class="back" routerLink="/">&larr; {{ i18n.t('common.allTrips') }}</a>
 
   @if (loading()) {
     <div class="loading">
       <mat-spinner diameter="36" />
-      <p>Loading trip...</p>
+      <p>{{ i18n.t('tripDetail.loading') }}</p>
     </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
@@ -16,12 +16,12 @@
     <p class="description">{{ t.description }}</p>
 
     <section class="pricing">
-      <h2>Group pricing</h2>
+      <h2>{{ i18n.t('tripDetail.groupPricing') }}</h2>
       <table>
         <thead>
           <tr>
-            <th>Group size</th>
-            <th>Price per seat</th>
+            <th>{{ i18n.t('tripDetail.groupSize') }}</th>
+            <th>{{ i18n.t('tripDetail.pricePerSeat') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -34,7 +34,7 @@
               <td>
                 {{ tier.minParticipants }}+
                 @if (t.priceTiers[i + 1]) {
-                  (up to {{ t.priceTiers[i + 1].minParticipants - 1 }})
+                  ({{ i18n.t('tripDetail.upTo', { max: t.priceTiers[i + 1].minParticipants - 1 }) }})
                 }
               </td>
               <td>{{ tier.pricePerSeat | currency }}</td>
@@ -43,13 +43,14 @@
         </tbody>
       </table>
       <p class="fine-print">
-        Group of {{ t.minParticipants }}&ndash;{{ t.maxParticipants }} travelers. Booking closes
+        {{ i18n.t('tripDetail.groupOf') }} {{ t.minParticipants }}&ndash;{{ t.maxParticipants }}
+        {{ i18n.t('tripDetail.travelers') }}
         {{ t.bookingDeadline | date: 'medium' }}.
       </p>
     </section>
 
     <section class="hotels">
-      <h2>Hotels</h2>
+      <h2>{{ i18n.t('tripDetail.hotels') }}</h2>
       @if (hotels().length > 0) {
         <ul class="hotel-list">
           @for (hotel of hotels(); track hotel.id) {
@@ -63,26 +64,30 @@
           }
         </ul>
       } @else {
-        <p class="hint">No hotels added for this trip yet.</p>
+        <p class="hint">{{ i18n.t('tripDetail.noHotels') }}</p>
       }
 
       @if (auth.currentUser()?.isAdmin) {
         <p class="hint">
-          <a routerLink="/admin">Manage this trip's hotels in the admin dashboard &rarr;</a>
+          <a routerLink="/admin">{{ i18n.t('tripDetail.manageHotelsLink') }}</a>
         </p>
       }
     </section>
 
     <section class="start-group">
-      <h2>Start a group</h2>
-      <p>Be the first to join - others can then hop in and the price drops for everyone.</p>
+      <h2>{{ i18n.t('tripDetail.startGroup') }}</h2>
+      <p>{{ i18n.t('tripDetail.startGroupHint') }}</p>
       @if (auth.isLoggedIn()) {
         <button mat-flat-button type="button" [disabled]="creating()" (click)="startGroup()">
-          {{ creating() ? 'Starting...' : 'Start this group as ' + auth.currentUser()?.displayName }}
+          {{
+            creating()
+              ? i18n.t('tripDetail.starting')
+              : i18n.t('tripDetail.startAs', { name: auth.currentUser()?.displayName ?? '' })
+          }}
         </button>
       } @else {
         <a mat-flat-button class="login-cta" [routerLink]="['/login']" [queryParams]="{ redirectTo: '/trips/' + t.id }">
-          Log in to start a group
+          {{ i18n.t('tripDetail.loginToStart') }}
         </a>
       }
       @if (createError()) {
