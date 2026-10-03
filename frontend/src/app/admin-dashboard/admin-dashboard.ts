@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../core/auth.service';
+import { I18nService } from '../core/i18n.service';
 import { apiErrorMessage } from '../core/group-booking.service';
 import { HotelService } from '../core/hotel.service';
 import { TripInput, TripService } from '../core/trip.service';
@@ -68,6 +69,7 @@ export class AdminDashboard implements OnInit {
   private readonly tripService = inject(TripService);
   private readonly hotelService = inject(HotelService);
   protected readonly auth = inject(AuthService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly trips = signal<Trip[]>([]);
   protected readonly loading = signal(true);
@@ -111,7 +113,7 @@ export class AdminDashboard implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Could not load trips.');
+        this.error.set(this.i18n.t('admin.loadTripsError'));
         this.loading.set(false);
       },
     });
@@ -178,13 +180,13 @@ export class AdminDashboard implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.savingTrip.set(false);
-        this.tripFormError.set(apiErrorMessage(err, 'Could not save this trip.'));
+        this.tripFormError.set(apiErrorMessage(err, this.i18n.t('admin.saveTripError')));
       },
     });
   }
 
   protected deleteTrip(trip: Trip): void {
-    if (!confirm(`Delete "${trip.destination}"? This cannot be undone.`)) {
+    if (!confirm(this.i18n.t('admin.deleteTripConfirm', { destination: trip.destination }))) {
       return;
     }
     this.deletingTripId.set(trip.id);
@@ -202,7 +204,7 @@ export class AdminDashboard implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.deletingTripId.set(null);
-        this.deleteTripError.set(apiErrorMessage(err, 'Could not delete this trip.'));
+        this.deleteTripError.set(apiErrorMessage(err, this.i18n.t('admin.deleteTripError')));
       },
     });
   }
@@ -279,14 +281,14 @@ export class AdminDashboard implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.savingHotel.set(false);
-        this.hotelFormError.set(apiErrorMessage(err, 'Could not save this hotel.'));
+        this.hotelFormError.set(apiErrorMessage(err, this.i18n.t('admin.saveHotelError')));
       },
     });
   }
 
   protected deleteHotel(hotel: Hotel): void {
     const tripId = this.expandedTripId();
-    if (!tripId || !confirm(`Delete "${hotel.name}"? This cannot be undone.`)) {
+    if (!tripId || !confirm(this.i18n.t('admin.deleteHotelConfirm', { name: hotel.name }))) {
       return;
     }
     this.deletingHotelId.set(hotel.id);
@@ -301,7 +303,7 @@ export class AdminDashboard implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.deletingHotelId.set(null);
-        this.deleteHotelError.set(apiErrorMessage(err, 'Could not delete this hotel.'));
+        this.deleteHotelError.set(apiErrorMessage(err, this.i18n.t('admin.deleteHotelError')));
       },
     });
   }

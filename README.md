@@ -291,6 +291,7 @@ into by this work - branches are merged in by hand, in order:
 `join-confirmation-email` → `dark-theme-polish-and-search` → `blue-yellow-theme` →
 `dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel` → `admin-chat-widget`
 → `chat-widget-show-customer-name` → `hero-plane-background` → `i18n-en-fr`
+→ `admin-dashboard-i18n-and-polish`
 
 ## Simplifications and next steps
 
@@ -323,9 +324,10 @@ Documented deliberately, not accidentally missed:
   (same trip always gets the same photos) so the carousels have something to show;
   there's no real photo library or upload flow wired up.
 - **English/French translation covers the main pages, not the whole app.** The header
-  nav/footer, trip list, login/register, and chat widget are fully bilingual; the trip
-  detail, group-booking detail, hotel forms, admin dashboard, and all backend-returned
-  error messages are still English-only. Adding a page to the dictionary is
+  nav/footer, trip list, login/register, chat widget, and admin dashboard (including
+  the trip and hotel create/edit forms) are fully bilingual; the trip detail,
+  group-booking detail, and all backend-returned error messages are still
+  English-only. Adding a page to the dictionary is
   mechanical (add keys to both `core/i18n/en.ts` and `core/i18n/fr.ts`, call
   `i18n.t('key')` in the template) - just not done everywhere yet.
 - **The audit trail has no replay/backfill path.** It's built purely from events
