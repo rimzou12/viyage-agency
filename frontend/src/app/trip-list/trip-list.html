@@ -1,6 +1,9 @@
 <main class="page">
-  <h1 class="accent-heading">Group trips</h1>
-  <p class="subtitle">Join a group booking and the price per seat drops as more people sign up.</p>
+  <div class="hero">
+    <mat-icon class="hero-plane" aria-hidden="true">flight</mat-icon>
+    <h1 class="accent-heading">Group trips</h1>
+    <p class="subtitle">Join a group booking and the price per seat drops as more people sign up.</p>
+  </div>
 
   @if (!loading() && !error() && trips().length > 0) {
     <div class="filters">
