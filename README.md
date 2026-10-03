@@ -313,6 +313,7 @@ into by this work - branches are merged in by hand, in order:
 → `chat-widget-show-customer-name` → `hero-plane-background` → `i18n-en-fr`
 → `admin-dashboard-i18n-and-polish` → `i18n-trip-and-booking-detail`
 → `cinematic-editorial-homepage` → `fancy-hero-search-bar` → `custom-search-pill`
+→ `admin-dashboard-spacing-polish`
 
 ## Simplifications and next steps
 
