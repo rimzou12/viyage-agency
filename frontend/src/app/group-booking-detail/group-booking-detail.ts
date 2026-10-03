@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { AuthService } from '../core/auth.service';
+import { I18nService } from '../core/i18n.service';
 import { AuditEvent, GroupBooking, Participant } from '../core/models';
 
 /** Backstop only - live updates normally arrive over SSE well before this fires. */
@@ -43,6 +44,7 @@ export class GroupBookingDetail {
   /** Set when this page was opened from someone else's invite link (?ref=<theirParticipantId>). */
   private readonly referrerParticipantId = this.route.snapshot.queryParamMap.get('ref');
   protected readonly auth = inject(AuthService);
+  protected readonly i18n = inject(I18nService);
   protected readonly linkCopied = signal(false);
 
   protected readonly booking = signal<GroupBooking | null>(null);
@@ -116,7 +118,7 @@ export class GroupBookingDetail {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set('Group booking not found.');
+          this.error.set(this.i18n.t('booking.notFound'));
           this.loading.set(false);
         },
       });
@@ -132,7 +134,7 @@ export class GroupBookingDetail {
       },
       error: (err: HttpErrorResponse) => {
         this.joining.set(false);
-        this.joinError.set(apiErrorMessage(err, 'Could not join this group.'));
+        this.joinError.set(apiErrorMessage(err, this.i18n.t('booking.joinError')));
       },
     });
   }
@@ -158,7 +160,7 @@ export class GroupBookingDetail {
       },
       error: (err: HttpErrorResponse) => {
         this.leaving.set(false);
-        this.leaveError.set(apiErrorMessage(err, 'Could not leave this group.'));
+        this.leaveError.set(apiErrorMessage(err, this.i18n.t('booking.leaveError')));
       },
     });
   }
@@ -173,7 +175,7 @@ export class GroupBookingDetail {
       },
       error: (err: HttpErrorResponse) => {
         this.joiningWaitlist.set(false);
-        this.joinWaitlistError.set(apiErrorMessage(err, 'Could not join the waitlist.'));
+        this.joinWaitlistError.set(apiErrorMessage(err, this.i18n.t('booking.joinWaitlistError')));
       },
     });
   }
@@ -188,7 +190,7 @@ export class GroupBookingDetail {
       },
       error: (err: HttpErrorResponse) => {
         this.leavingWaitlist.set(false);
-        this.leaveWaitlistError.set(apiErrorMessage(err, 'Could not leave the waitlist.'));
+        this.leaveWaitlistError.set(apiErrorMessage(err, this.i18n.t('booking.leaveWaitlistError')));
       },
     });
   }
@@ -208,7 +210,7 @@ export class GroupBookingDetail {
       },
       error: (err: HttpErrorResponse) => {
         this.requestingReservation.set(false);
-        this.requestReservationError.set(apiErrorMessage(err, 'Could not request the hotel reservation.'));
+        this.requestReservationError.set(apiErrorMessage(err, this.i18n.t('booking.requestReservationError')));
       },
     });
   }
@@ -223,7 +225,7 @@ export class GroupBookingDetail {
       },
       error: (err: HttpErrorResponse) => {
         this.confirmingReservation.set(false);
-        this.confirmReservationError.set(apiErrorMessage(err, 'Could not confirm the hotel reservation.'));
+        this.confirmReservationError.set(apiErrorMessage(err, this.i18n.t('booking.confirmReservationError')));
       },
     });
   }
@@ -247,13 +249,19 @@ export class GroupBookingDetail {
   protected describeEvent(event: AuditEvent): string {
     switch (event.type) {
       case 'PARTICIPANT_JOINED':
-        return `${event.customerName} joined (${event.participantCount} in the group)`;
+        return this.i18n.t('booking.eventJoined', {
+          name: event.customerName ?? '',
+          count: event.participantCount,
+        });
       case 'PARTICIPANT_LEFT':
-        return `Someone left (${event.participantCount} in the group)`;
+        return this.i18n.t('booking.eventLeft', { count: event.participantCount });
       case 'FINALIZED':
         return event.status === 'CONFIRMED'
-          ? `Group confirmed with ${event.participantCount} traveler${event.participantCount === 1 ? '' : 's'}`
-          : 'Group cancelled - not enough travelers joined in time';
+          ? this.i18n.t(
+              event.participantCount === 1 ? 'booking.eventConfirmedSingular' : 'booking.eventConfirmedPlural',
+              { count: event.participantCount },
+            )
+          : this.i18n.t('booking.eventCancelled');
     }
   }
 }

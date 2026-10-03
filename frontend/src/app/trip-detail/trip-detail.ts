@@ -8,6 +8,7 @@ import { TripService } from '../core/trip.service';
 import { GroupBookingService, apiErrorMessage } from '../core/group-booking.service';
 import { HotelService } from '../core/hotel.service';
 import { AuthService } from '../core/auth.service';
+import { I18nService } from '../core/i18n.service';
 import { Hotel, Trip } from '../core/models';
 import { tripPhotoUrls } from '../core/photos';
 import { ImageCarousel } from '../shared/image-carousel/image-carousel';
@@ -27,6 +28,7 @@ export class TripDetail {
   private readonly groupBookingService = inject(GroupBookingService);
   private readonly hotelService = inject(HotelService);
   protected readonly auth = inject(AuthService);
+  protected readonly i18n = inject(I18nService);
 
   private readonly tripId = this.route.snapshot.paramMap.get('id')!;
 
@@ -49,7 +51,7 @@ export class TripDetail {
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Trip not found.');
+        this.error.set(this.i18n.t('tripDetail.notFound'));
         this.loading.set(false);
       },
     });
@@ -77,7 +79,7 @@ export class TripDetail {
       next: (booking) => this.router.navigate(['/group-bookings', booking.id]),
       error: (err: HttpErrorResponse) => {
         this.creating.set(false);
-        this.createError.set(apiErrorMessage(err, 'Could not start a group booking.'));
+        this.createError.set(apiErrorMessage(err, this.i18n.t('tripDetail.startError')));
       },
     });
   }
