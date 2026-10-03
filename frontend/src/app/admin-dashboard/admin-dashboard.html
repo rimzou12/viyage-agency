@@ -1,11 +1,14 @@
 <main class="page">
-  <h1 class="accent-heading">Admin dashboard</h1>
-  <p class="subtitle">Add and edit trips and their hotel catalogs.</p>
+  <div class="hero">
+    <mat-icon class="hero-icon" aria-hidden="true">travel_explore</mat-icon>
+    <h1 class="accent-heading">{{ i18n.t('admin.title') }}</h1>
+    <p class="subtitle">{{ i18n.t('admin.subtitle') }}</p>
+  </div>
 
   @if (loading()) {
     <div class="loading">
       <mat-spinner diameter="36" />
-      <p>Loading trips...</p>
+      <p>{{ i18n.t('admin.loadingTrips') }}</p>
     </div>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
@@ -13,7 +16,7 @@
     @if (!showTripForm()) {
       <button mat-flat-button type="button" class="add-trip-button" (click)="startCreatingTrip()">
         <mat-icon>add</mat-icon>
-        Add a trip
+        {{ i18n.t('admin.addTrip') }}
       </button>
     }
 
@@ -23,11 +26,11 @@
 
     @if (showTripForm(); as show) {
       <form class="trip-form glass-panel" (submit)="$event.preventDefault(); submitTripForm()">
-        <h2>{{ editingTripId() ? 'Edit trip' : 'Add a trip' }}</h2>
+        <h2>{{ editingTripId() ? i18n.t('admin.editTrip') : i18n.t('admin.addTrip') }}</h2>
 
         <div class="grid">
           <mat-form-field appearance="outline">
-            <mat-label>Destination</mat-label>
+            <mat-label>{{ i18n.t('admin.destination') }}</mat-label>
             <input
               matInput
               [ngModel]="tripForm().destination"
@@ -37,7 +40,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="span-2">
-            <mat-label>Description</mat-label>
+            <mat-label>{{ i18n.t('admin.description') }}</mat-label>
             <input
               matInput
               [ngModel]="tripForm().description"
@@ -47,7 +50,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Departure date</mat-label>
+            <mat-label>{{ i18n.t('admin.departureDate') }}</mat-label>
             <input
               matInput
               type="date"
@@ -58,7 +61,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Return date</mat-label>
+            <mat-label>{{ i18n.t('admin.returnDate') }}</mat-label>
             <input
               matInput
               type="date"
@@ -69,7 +72,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Booking closes</mat-label>
+            <mat-label>{{ i18n.t('admin.bookingCloses') }}</mat-label>
             <input
               matInput
               type="datetime-local"
@@ -80,7 +83,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Min travelers</mat-label>
+            <mat-label>{{ i18n.t('admin.minTravelers') }}</mat-label>
             <input
               matInput
               type="number"
@@ -92,7 +95,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Max travelers</mat-label>
+            <mat-label>{{ i18n.t('admin.maxTravelers') }}</mat-label>
             <input
               matInput
               type="number"
@@ -104,7 +107,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Base price per seat</mat-label>
+            <mat-label>{{ i18n.t('admin.basePrice') }}</mat-label>
             <input
               matInput
               type="number"
@@ -117,7 +120,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="span-2">
-            <mat-label>Price tiers - one per line, "min travelers,price per seat"</mat-label>
+            <mat-label>{{ i18n.t('admin.priceTiers') }}</mat-label>
             <textarea
               matInput
               rows="3"
@@ -131,10 +134,10 @@
 
         <div class="actions">
           <button mat-flat-button type="submit" [disabled]="savingTrip()">
-            {{ savingTrip() ? 'Saving...' : editingTripId() ? 'Save changes' : 'Create trip' }}
+            {{ savingTrip() ? i18n.t('admin.saving') : editingTripId() ? i18n.t('admin.saveChanges') : i18n.t('admin.createTrip') }}
           </button>
           <button mat-stroked-button type="button" [disabled]="savingTrip()" (click)="cancelTripForm()">
-            Cancel
+            {{ i18n.t('admin.cancel') }}
           </button>
         </div>
         @if (tripFormError()) {
@@ -150,16 +153,20 @@
             <div class="trip-info">
               <h3>{{ trip.destination }}</h3>
               <p class="dates">{{ trip.departureDate | date }} &ndash; {{ trip.returnDate | date }}</p>
-              <p class="price">from {{ (trip.priceTiers.at(-1)?.pricePerSeat ?? trip.basePrice) | currency }} per seat</p>
+              <p class="price">
+                {{ i18n.t('admin.from') }}
+                {{ (trip.priceTiers.at(-1)?.pricePerSeat ?? trip.basePrice) | currency }}
+                {{ i18n.t('admin.perSeat') }}
+              </p>
             </div>
             <div class="trip-actions">
               <button mat-stroked-button type="button" (click)="startEditingTrip(trip)">
                 <mat-icon>edit</mat-icon>
-                Edit trip
+                {{ i18n.t('admin.editTrip') }}
               </button>
               <button mat-stroked-button type="button" (click)="toggleHotels(trip)">
                 <mat-icon>hotel</mat-icon>
-                {{ expandedTripId() === trip.id ? 'Hide hotels' : 'Manage hotels' }}
+                {{ expandedTripId() === trip.id ? i18n.t('admin.hideHotels') : i18n.t('admin.manageHotels') }}
               </button>
               <button
                 mat-stroked-button
@@ -169,7 +176,7 @@
                 (click)="deleteTrip(trip)"
               >
                 <mat-icon>delete</mat-icon>
-                {{ deletingTripId() === trip.id ? 'Deleting...' : 'Delete' }}
+                {{ deletingTripId() === trip.id ? i18n.t('admin.deleting') : i18n.t('admin.delete') }}
               </button>
             </div>
           </div>
@@ -177,7 +184,7 @@
           @if (expandedTripId() === trip.id) {
             <div class="hotels-panel">
               @if (loadingHotels()) {
-                <p class="hint">Loading hotels...</p>
+                <p class="hint">{{ i18n.t('admin.loadingHotels') }}</p>
               } @else {
                 @if (hotels().length > 0) {
                   <ul class="hotel-list">
@@ -190,7 +197,7 @@
                         <div class="hotel-actions">
                           <button mat-stroked-button type="button" (click)="startEditingHotel(hotel)">
                             <mat-icon>edit</mat-icon>
-                            Edit
+                            {{ i18n.t('admin.edit') }}
                           </button>
                           <button
                             mat-stroked-button
@@ -200,14 +207,14 @@
                             (click)="deleteHotel(hotel)"
                           >
                             <mat-icon>delete</mat-icon>
-                            {{ deletingHotelId() === hotel.id ? 'Deleting...' : 'Delete' }}
+                            {{ deletingHotelId() === hotel.id ? i18n.t('admin.deleting') : i18n.t('admin.delete') }}
                           </button>
                         </div>
                       </li>
                     }
                   </ul>
                 } @else {
-                  <p class="hint">No hotels added for this trip yet.</p>
+                  <p class="hint">{{ i18n.t('admin.noHotels') }}</p>
                 }
                 @if (deleteHotelError()) {
                   <p class="error">{{ deleteHotelError() }}</p>
@@ -215,9 +222,9 @@
               }
 
               <form class="hotel-form" (submit)="$event.preventDefault(); submitHotelForm()">
-                <h4>{{ editingHotelId() ? 'Edit hotel' : 'Add a hotel' }}</h4>
+                <h4>{{ editingHotelId() ? i18n.t('admin.editHotel') : i18n.t('admin.addHotel') }}</h4>
                 <mat-form-field appearance="outline">
-                  <mat-label>Name</mat-label>
+                  <mat-label>{{ i18n.t('admin.hotelName') }}</mat-label>
                   <input
                     matInput
                     [ngModel]="hotelForm().name"
@@ -226,7 +233,7 @@
                   />
                 </mat-form-field>
                 <mat-form-field appearance="outline">
-                  <mat-label>Description</mat-label>
+                  <mat-label>{{ i18n.t('admin.hotelDescription') }}</mat-label>
                   <input
                     matInput
                     [ngModel]="hotelForm().description"
@@ -235,7 +242,7 @@
                   />
                 </mat-form-field>
                 <mat-form-field appearance="outline">
-                  <mat-label>Photo URLs (one per line)</mat-label>
+                  <mat-label>{{ i18n.t('admin.photoUrls') }}</mat-label>
                   <textarea
                     matInput
                     rows="3"
@@ -250,11 +257,11 @@
                     type="submit"
                     [disabled]="savingHotel() || !hotelForm().name.trim() || !hotelForm().description.trim()"
                   >
-                    {{ savingHotel() ? 'Saving...' : editingHotelId() ? 'Save changes' : 'Add hotel' }}
+                    {{ savingHotel() ? i18n.t('admin.saving') : editingHotelId() ? i18n.t('admin.saveChanges') : i18n.t('admin.addHotelSubmit') }}
                   </button>
                   @if (editingHotelId()) {
                     <button mat-stroked-button type="button" [disabled]="savingHotel()" (click)="cancelHotelForm()">
-                      Cancel
+                      {{ i18n.t('admin.cancel') }}
                     </button>
                   }
                 </div>
