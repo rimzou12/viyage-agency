@@ -114,9 +114,15 @@ custom theme and a handful of shared primitives supply the look:
   replacing the earlier flat-color hero with a decorative plane icon. The bar is a
   true frosted-glass panel (low-opacity white + heavy blur, not the near-solid
   `.glass-panel` used for ordinary content cards) so the photo keeps showing through
-  it, its Material fields are re-skinned fully pill-shaped (overriding the MDC
-  outline segments, since corner radius isn't exposed as a form-field input), and a
-  gradient `Search` button smooth-scrolls to the results.
+  it, and a gradient `Search` button smooth-scrolls to the results. Its two fields
+  are plain hand-built pills (a native `<input>` in a flex row), not skinned
+  `mat-form-field`s - that was tried first by overriding the MDC outline segments,
+  but Material's "outline" appearance reserves internal layout space for a floating
+  label that kept landing the prefix icon and input text on different baselines no
+  matter how the outline chrome was re-skinned. A plain flex row sidesteps that
+  entirely; `MatDatepickerModule`'s `[matDatepicker]` directive still works fine on a
+  bare `<input>` without a `mat-form-field` ancestor, so the date field keeps full
+  picker functionality.
 - A bento-style trip gallery (`trip-list`'s `.trip-grid`): a repeating 4-across CSS
   Grid where every fourth card spans the full row as a featured banner and the rest
   pair up at half width, instead of a uniform card grid - breaks visual monotony
@@ -306,7 +312,7 @@ into by this work - branches are merged in by hand, in order:
 `dark-mode-redesign` → `light-theme` → `admin-dashboard` → `delete-trip-and-hotel` → `admin-chat-widget`
 → `chat-widget-show-customer-name` → `hero-plane-background` → `i18n-en-fr`
 → `admin-dashboard-i18n-and-polish` → `i18n-trip-and-booking-detail`
-→ `cinematic-editorial-homepage` → `fancy-hero-search-bar`
+→ `cinematic-editorial-homepage` → `fancy-hero-search-bar` → `custom-search-pill`
 
 ## Simplifications and next steps
 
